@@ -83,18 +83,22 @@ export function useStats() {
   }, [])
 
   const updateStats = useCallback(async (patch) => {
-    const updated = { ...stats, ...patch }
-    setStats(updated)  // update local state immediately (feels instant)
+    // Step 1: update local state immediately using functional update
+    setStats(prev => ({ ...prev, ...patch }))
 
+    // Step 2: save to Supabase — no re-fetch after this
     const { error } = await supabase
       .from('user_stats')
       .update(patch)
       .eq('id', 1)
 
     if (error) {
-      console.error('Update failed:', error)
-      setStats(stats)  // revert if save failed
+      console.error('Update error:', error)
+      // revert using functional update
+      setStats(prev => ({ ...prev, ...stats }))
     }
+    // DO NOT call fetchStats() or setStats(data) after update
+    // DO NOT re-fetch after saving — causes the flicker
   }, [stats])
 
   const addSession = useCallback(async (minutes) => {

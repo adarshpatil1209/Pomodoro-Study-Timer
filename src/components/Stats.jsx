@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Minus, Plus } from 'lucide-react'
 import './Stats.css'
@@ -70,6 +71,8 @@ function WeeklyChart({ weeklyData }) {
 }
 
 export default function Stats({ stats, updateStats }) {
+  const isUpdating = useRef(false)
+
   if (!stats) return null
 
   const totalSessions = stats.total_sessions || 0
@@ -80,9 +83,13 @@ export default function Stats({ stats, updateStats }) {
   const goalHit = sessionsToday >= dailyGoal
 
   const handleGoalChange = async (delta) => {
-    const currentGoal = stats.daily_goal || 8
-    const newGoal = Math.max(1, Math.min(20, currentGoal + delta))
+    if (isUpdating.current) return  // block if already updating
+    isUpdating.current = true
+
+    const newGoal = Math.max(1, Math.min(20, stats.daily_goal + delta))
     await updateStats({ daily_goal: newGoal })
+
+    isUpdating.current = false
   }
 
   return (
