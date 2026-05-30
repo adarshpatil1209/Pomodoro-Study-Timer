@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Plus } from 'lucide-react'
 import './TodoList.css'
 
-const SUBJECTS = ['Anatomy', 'Physio', 'Biochem', 'Pharma', 'General']
+const SUBJECTS = ['Physics', 'Chemistry', 'Botany', 'Zoology', 'Custom']
 
 function Checkbox({ checked, onToggle }) {
   return (
@@ -78,13 +78,20 @@ export default function TodoList({ todosHook, onTaskComplete }) {
   const { todos, addTodo, toggleTodo, deleteTodo } = todosHook
 
   const [text, setText] = useState('')
-  const [subject, setSubject] = useState('General')
+  const [selectedSubject, setSelectedSubject] = useState('Physics')
+  const [customSubject, setCustomSubject] = useState('')
   const [priority, setPriority] = useState('normal')
 
   const handleAdd = () => {
     const trimmed = text.trim()
     if (!trimmed) return
-    addTodo(trimmed, subject, priority)
+
+    let finalSubject = selectedSubject
+    if (selectedSubject === 'Custom') {
+      finalSubject = customSubject.trim() || 'Custom'
+    }
+
+    addTodo(trimmed, finalSubject, priority)
     setText('')
     setPriority('normal')
   }
@@ -123,16 +130,34 @@ export default function TodoList({ todosHook, onTaskComplete }) {
           </div>
 
           {/* Subject chips */}
-          <div className="todo-subject-chips">
+          <div className="todo-subject-chips" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
             {SUBJECTS.map((s) => (
               <button
                 key={s}
-                className={`todo-subject-chip ${subject === s ? 'todo-subject-chip--active' : ''}`}
-                onClick={() => setSubject(s)}
+                type="button"
+                className={`todo-subject-chip ${selectedSubject === s ? 'todo-subject-chip--active' : ''}`}
+                onClick={() => setSelectedSubject(s)}
               >
                 {s}
               </button>
             ))}
+            <AnimatePresence>
+              {selectedSubject === 'Custom' && (
+                <motion.input
+                  key="custom-subject"
+                  type="text"
+                  className="todo-custom-subject-input"
+                  placeholder="Subject name..."
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 100, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  style={{ overflow: 'hidden' }}
+                />
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Priority toggle */}

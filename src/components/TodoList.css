@@ -90,6 +90,23 @@
   color: var(--accent);
 }
 
+.todo-custom-subject-input {
+  background: #7D1020;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #F5EFE6;
+  width: 100px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.todo-custom-subject-input:focus {
+  border-color: rgba(200,184,154,0.50);
+}
+
 /* --- Priority Toggle --- */
 .todo-priority-toggle {
   align-self: flex-start;
