@@ -79,11 +79,10 @@ export default function Stats({ stats, updateStats }) {
   const dailyGoal = stats.daily_goal || 8
   const goalHit = sessionsToday >= dailyGoal
 
-  const handleGoalChange = (delta) => {
-    const newGoal = Math.max(1, Math.min(20, dailyGoal + delta))
-    if (newGoal !== dailyGoal) {
-      updateStats({ daily_goal: newGoal })
-    }
+  const handleGoalChange = async (delta) => {
+    const currentGoal = stats.daily_goal || 8
+    const newGoal = Math.max(1, Math.min(20, currentGoal + delta))
+    await updateStats({ daily_goal: newGoal })
   }
 
   return (
@@ -126,7 +125,7 @@ export default function Stats({ stats, updateStats }) {
         >
           <MetricCard
             emoji="🎯"
-            value={`${sessionsToday} / ${dailyGoal}`}
+            value={`${sessionsToday}/${dailyGoal}`}
             label="Today"
           >
             {goalHit && <span className="stats-goal-hit">🎉 Goal hit!</span>}
@@ -143,19 +142,19 @@ export default function Stats({ stats, updateStats }) {
         <div className="stats-goal-setter">
           <span className="stats-goal-label">Daily goal:</span>
           <button
-            className="btn-circle stats-goal-btn"
+            className="stats-goal-btn"
             onClick={() => handleGoalChange(-1)}
             aria-label="Decrease goal"
           >
-            <Minus size={14} />
+            −
           </button>
-          <span className="stats-goal-value font-mono">{dailyGoal}</span>
+          <span className="stats-goal-value">{stats.daily_goal || 8}</span>
           <button
-            className="btn-circle stats-goal-btn"
+            className="stats-goal-btn"
             onClick={() => handleGoalChange(1)}
             aria-label="Increase goal"
           >
-            <Plus size={14} />
+            +
           </button>
         </div>
       </div>

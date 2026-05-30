@@ -155,15 +155,33 @@
 .stats-goal-btn {
   width: 28px;
   height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: transparent;
+  color: #C8B89A;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+}
+
+.stats-goal-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.stats-goal-btn:active {
+  transform: scale(0.96);
 }
 
 .stats-goal-value {
+  font-family: 'DM Mono', monospace;
   font-size: 18px;
-  color: var(--text-primary);
-  min-width: 24px;
+  font-weight: 300;
+  color: #F5EFE6;
+  min-width: 28px;
   text-align: center;
 }
 

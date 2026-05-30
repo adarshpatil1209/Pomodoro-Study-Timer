@@ -83,19 +83,19 @@ export function useStats() {
   }, [])
 
   const updateStats = useCallback(async (patch) => {
+    const updated = { ...stats, ...patch }
+    setStats(updated)  // update local state immediately (feels instant)
+
     const { error } = await supabase
       .from('user_stats')
       .update(patch)
       .eq('id', 1)
 
     if (error) {
-      console.error('Error updating stats:', error)
-      return
+      console.error('Update failed:', error)
+      setStats(stats)  // revert if save failed
     }
-
-    // Refresh local state
-    setStats((prev) => (prev ? { ...prev, ...patch } : prev))
-  }, [])
+  }, [stats])
 
   const addSession = useCallback(async (minutes) => {
     if (!stats) return

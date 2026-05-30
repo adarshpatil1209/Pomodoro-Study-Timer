@@ -183,7 +183,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                Nothing to do 🌸 Add your first task above
+                Nothing to do baddie ,  Add your first task above
               </motion.div>
             ) : (
               todos.map((todo) => (
