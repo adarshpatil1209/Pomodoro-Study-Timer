@@ -1,0 +1,20 @@
+/* ========================================
+   Toast Component Styles
+   ======================================== */
+
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  padding: 14px 22px;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary);
+  z-index: 1000;
+  white-space: nowrap;
+  pointer-events: none;
+}

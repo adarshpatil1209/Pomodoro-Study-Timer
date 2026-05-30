@@ -1,0 +1,112 @@
+/* ========================================
+   pomo-love — Global Styles & Design Tokens
+   ======================================== */
+
+/* --- CSS Custom Properties (Design Tokens) --- */
+:root {
+  --bg: #3D0408;
+  --surface: #6B0A14;
+  --surface2: #7D1020;
+  --accent: #C8B89A;
+  --accent-light: #EDE0D4;
+  --text-primary: #F5EFE6;
+  --text-secondary: #C8B89A;
+  --text-tertiary: #9A7A6A;
+  --border: rgba(255,255,255,0.10);
+  --border-soft: rgba(255,255,255,0.08);
+  --streak: #D4893A;
+  --ring-track: rgba(255,255,255,0.12);
+  --break: #7DAA96;
+  --destructive: #B03030;
+  --hover-overlay: rgba(255,255,255,0.06);
+  --active-overlay: rgba(255,255,255,0.10);
+}
+
+/* --- Global Reset --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* --- Typography Classes --- */
+.font-display {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.font-mono {
+  font-family: 'DM Mono', monospace;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* --- Button Base Interactions --- */
+.btn-primary {
+  background: var(--accent);
+  color: var(--surface);
+  border: none;
+  border-radius: 14px;
+  font-family: 'DM Sans';
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-light);
+  transform: scale(1.03);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-circle {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.btn-circle:hover {
+  background: var(--hover-overlay);
+  transform: scale(1.03);
+}
+
+.btn-circle:active {
+  transform: scale(0.96);
+}
+
+/* --- Card Base --- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+}
+
+/* --- Spacing --- */
+.page-pad {
+  padding: 0 28px;
+}
+
+@media (max-width: 640px) {
+  .page-pad {
+    padding: 0 18px;
+  }
+}

@@ -1,0 +1,23 @@
+/* ========================================
+   SessionBanner Component Styles
+   ======================================== */
+
+.session-banner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 14px 28px;
+  z-index: 1000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.session-banner-text {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
