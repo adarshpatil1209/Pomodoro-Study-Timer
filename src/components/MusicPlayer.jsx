@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Music } from 'lucide-react'
+import { Music } from 'lucide-react'
 import './MusicPlayer.css'
 
 const PRESETS = [
@@ -46,6 +46,7 @@ function extractVideoId(input) {
 
 export default function MusicPlayer() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
   const [activePreset, setActivePreset] = useState(null)
   const [customUrl, setCustomUrl] = useState('')
   const [currentId, setCurrentId] = useState(null)
@@ -67,6 +68,19 @@ export default function MusicPlayer() {
     if (e.key === 'Enter') handleCustomPlay()
   }
 
+  const handleMinimize = () => {
+    setIsMinimized(true)
+  }
+
+  const handleRestore = () => {
+    setIsMinimized(false)
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+    setIsMinimized(false)
+  }
+
   const embedSrc = useMemo(() => {
     if (!currentId) return null
     return `https://www.youtube.com/embed/${currentId}?autoplay=1&enablejsapi=1`
@@ -74,7 +88,7 @@ export default function MusicPlayer() {
 
   return (
     <>
-      {/* Collapsed pill */}
+      {/* Collapsed pill — shown when panel is fully closed */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -91,79 +105,111 @@ export default function MusicPlayer() {
         )}
       </AnimatePresence>
 
-      {/* Expanded panel */}
+      {/* Minimized pill — shown when panel is open but minimized */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="music-panel"
-            initial={{ opacity: 0, scale: 0.85, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.85, y: 20 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-            style={{ transformOrigin: 'bottom right' }}
+        {isOpen && isMinimized && (
+          <motion.button
+            className="music-minimized-pill"
+            onClick={handleRestore}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            {/* Header */}
-            <div className="music-header">
-              <span className="section-label">STUDY MUSIC</span>
-              <button
-                className="btn-circle music-close-btn"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close music player"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* Preset chips */}
-            <div className="music-presets">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  className={`music-preset-chip ${activePreset === p.id ? 'music-preset-chip--active' : ''}`}
-                  onClick={() => handlePreset(p)}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom URL */}
-            <div className="music-custom-row">
-              <input
-                type="text"
-                className="music-custom-input"
-                placeholder="YouTube URL or ID"
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                onKeyDown={handleCustomKeyDown}
-              />
-              <button className="btn-primary music-play-btn" onClick={handleCustomPlay}>
-                Play
-              </button>
-            </div>
-
-            {/* YouTube embed */}
-            {embedSrc && (
-              <div className="music-embed-container">
-                <iframe
-                  className="music-iframe"
-                  src={embedSrc}
-                  title="Study music"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                  frameBorder="0"
-                />
-              </div>
-            )}
-
-            {!embedSrc && (
-              <div className="music-placeholder">
-                Pick a preset or paste a link to start playing
-              </div>
-            )}
-          </motion.div>
+            <span className="music-minimized-pulse" />
+            <span>♪ playing...</span>
+          </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Expanded panel — always mounted when isOpen, animated via height */}
+      {isOpen && (
+        <motion.div
+          className="music-panel"
+          initial={{ opacity: 0, scale: 0.85, y: 20 }}
+          animate={{
+            opacity: isMinimized ? 0 : 1,
+            scale: isMinimized ? 0.85 : 1,
+            y: isMinimized ? 20 : 0,
+            height: isMinimized ? 0 : 'auto',
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          style={{
+            transformOrigin: 'bottom right',
+            overflow: isMinimized ? 'hidden' : 'visible',
+            pointerEvents: isMinimized ? 'none' : 'auto',
+          }}
+        >
+          {/* Header */}
+          <div className="music-header">
+            <span className="section-label">STUDY MUSIC</span>
+            <div className="music-header-actions">
+              <button
+                className="music-header-btn"
+                onClick={handleMinimize}
+                aria-label="Minimize music player"
+              >
+                −
+              </button>
+              <button
+                className="music-header-btn"
+                onClick={handleClose}
+                aria-label="Close music player"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* Preset chips */}
+          <div className="music-presets">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                className={`music-preset-chip ${activePreset === p.id ? 'music-preset-chip--active' : ''}`}
+                onClick={() => handlePreset(p)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom URL */}
+          <div className="music-custom-row">
+            <input
+              type="text"
+              className="music-custom-input"
+              placeholder="YouTube URL or ID"
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              onKeyDown={handleCustomKeyDown}
+            />
+            <button className="btn-primary music-play-btn" onClick={handleCustomPlay}>
+              Play
+            </button>
+          </div>
+
+          {/* YouTube embed — NEVER unmounted, only hidden visually */}
+          <div className={`music-embed-container ${isMinimized ? 'music-embed-hidden' : ''}`}>
+            {embedSrc && (
+              <iframe
+                className="music-iframe"
+                src={embedSrc}
+                title="Study music"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                frameBorder="0"
+              />
+            )}
+          </div>
+
+          {!embedSrc && (
+            <div className="music-placeholder">
+              Pick a preset or paste a link to start playing
+            </div>
+          )}
+        </motion.div>
+      )}
     </>
   )
 }

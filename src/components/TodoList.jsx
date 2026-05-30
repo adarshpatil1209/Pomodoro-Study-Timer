@@ -41,10 +41,11 @@ function TodoRow({ todo, onToggle, onDelete }) {
     <motion.div
       className="todo-row"
       layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
       exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      whileHover={{ x: 4, transition: { duration: 0.15 } }}
     >
       {/* Priority dot */}
       {todo.priority === 'high' && <span className="todo-priority-dot" />}

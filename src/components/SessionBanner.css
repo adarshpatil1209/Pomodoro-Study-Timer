@@ -17,7 +17,9 @@
 }
 
 .session-banner-text {
-  font-size: 17px;
-  font-weight: 500;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 400;
+  font-style: italic;
   color: var(--text-primary);
 }

@@ -21,13 +21,15 @@ function pad(n) {
 
 function RoseSVG() {
   return (
-    <svg
+    <motion.svg
       className="timer-rose"
       width="80"
       height="80"
       viewBox="0 0 80 80"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      animate={{ rotate: [0, 2, -1, 0], y: [0, 4, 0] }}
+      transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
     >
       <path
         d="M40 8C40 8 32 18 28 26C24 34 26 40 30 44C34 48 38 46 40 42C42 46 46 48 50 44C54 40 56 34 52 26C48 18 40 8 40 8Z"
@@ -45,7 +47,7 @@ function RoseSVG() {
         d="M50 44C50 44 58 42 62 44C66 46 68 52 64 56C60 58 54 56 52 52C50 48 50 44 50 44Z"
         fill="rgba(90,10,20,0.45)"
       />
-    </svg>
+    </motion.svg>
   )
 }
 
@@ -54,16 +56,25 @@ function TomatoIcons({ sessionCount }) {
   const filled = sessionCount % 4
   return (
     <div className="timer-tomatoes">
-      {Array.from({ length: total }, (_, i) => (
-        <span key={i} className={i < filled ? 'tomato-filled' : 'tomato-hollow'}>
-          🍅
-        </span>
-      ))}
+      {Array.from({ length: total }, (_, i) => {
+        const isFilled = i < filled
+        return (
+          <motion.span
+            key={`${i}-${isFilled}`}
+            className={isFilled ? 'tomato-filled' : 'tomato-hollow'}
+            initial={isFilled ? { scale: 0 } : false}
+            animate={{ scale: 1 }}
+            transition={isFilled ? { type: 'spring', stiffness: 400, damping: 15 } : { duration: 0 }}
+          >
+            🍅
+          </motion.span>
+        )
+      })}
     </div>
   )
 }
 
-function CircularRing({ timeLeft, totalDuration, mode }) {
+function CircularRing({ timeLeft, totalDuration, mode, isRunning }) {
   const isBreak = mode === 'shortBreak' || mode === 'longBreak'
   const strokeColor = isBreak ? 'var(--break)' : 'var(--accent)'
 
@@ -77,7 +88,11 @@ function CircularRing({ timeLeft, totalDuration, mode }) {
   const seconds = timeLeft % 60
 
   return (
-    <div className="timer-ring-container">
+    <motion.div
+      className="timer-ring-container"
+      animate={{ scale: isRunning ? [1, 1.008, 1] : 1 }}
+      transition={isRunning ? { duration: 4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+    >
       <svg className="timer-ring-svg" viewBox="0 0 240 240">
         {/* Track */}
         <circle
@@ -109,7 +124,7 @@ function CircularRing({ timeLeft, totalDuration, mode }) {
           {pad(minutes)}:{pad(seconds)}
         </span>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -190,7 +205,7 @@ export default function Timer({ timerHook }) {
       </div>
 
       {/* SVG Ring */}
-      <CircularRing timeLeft={timeLeft} totalDuration={totalDuration} mode={mode} />
+      <CircularRing timeLeft={timeLeft} totalDuration={totalDuration} mode={mode} isRunning={isRunning} />
 
       {/* Session tomato icons */}
       <TomatoIcons sessionCount={sessionCount} />
@@ -255,6 +270,8 @@ export default function Timer({ timerHook }) {
         <motion.button
           className="btn-primary timer-main-btn"
           onClick={isRunning ? pause : start}
+          animate={!isRunning && timeLeft === totalDuration ? { scale: [1, 1.04, 1] } : { scale: 1 }}
+          transition={!isRunning && timeLeft === totalDuration ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
           whileTap={{ scale: 0.96 }}
           whileHover={{ scale: 1.03 }}
         >

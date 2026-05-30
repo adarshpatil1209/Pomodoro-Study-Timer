@@ -46,11 +46,12 @@ body {
 }
 
 .section-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: #C8B89A;
 }
 
 /* --- Button Base Interactions --- */

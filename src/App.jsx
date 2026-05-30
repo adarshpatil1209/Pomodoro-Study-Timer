@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { useTimer } from './hooks/useTimer'
 import { useStats } from './hooks/useStats'
 import { useTodos } from './hooks/useTodos'
@@ -9,25 +10,28 @@ import MusicPlayer from './components/MusicPlayer'
 import Toast from './components/Toast'
 import SessionBanner, { useSessionBanner } from './components/SessionBanner'
 import EndOfDayModal from './components/EndOfDayModal'
+import { SkeletonTimerCard, SkeletonStatsCard, SkeletonTodoCard } from './components/Skeleton'
 import { fireGoalConfetti } from './utils/confetti'
 import './App.css'
 
 function HibiscusSVG() {
   return (
-    <svg
+    <motion.svg
       className="app-hibiscus"
       width="100"
       height="100"
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      animate={{ rotate: [0, 2, -1, 0], y: [0, 4, 0] }}
+      transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
     >
       <path
         d="M50 20C50 20 40 8 30 12C20 16 22 28 30 34C24 30 12 26 10 36C8 46 20 48 30 44C20 48 14 58 22 64C30 70 38 60 40 52C38 62 40 76 50 76C60 76 62 62 60 52C62 60 70 70 78 64C86 58 80 48 70 44C80 48 92 46 90 36C88 26 76 30 70 34C78 28 80 16 70 12C60 8 50 20 50 20Z"
         fill="rgba(90,10,20,0.6)"
       />
       <circle cx="50" cy="44" r="8" fill="rgba(90,10,20,0.45)" />
-    </svg>
+    </motion.svg>
   )
 }
 
@@ -95,10 +99,18 @@ export default function App() {
   // --- Hooks ---
   const { stats, loading, updateStats, addSession } = useStats()
 
+  const [isLoading, setIsLoading] = useState(true)
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const [eodVisible, setEodVisible] = useState(false)
   const [eodDismissed, setEodDismissed] = useState(false)
+
+  // Transition from skeleton to real content when stats arrive
+  useEffect(() => {
+    if (stats !== null) {
+      setIsLoading(false)
+    }
+  }, [stats])
 
   const { bannerType, bannerVisible, showBanner, hideBanner } = useSessionBanner()
 
@@ -189,44 +201,115 @@ export default function App() {
   const displayName = stats?.display_name || 'love'
   const streakDays = stats?.streak_days || 0
 
-  if (loading) {
-    return (
-      <div className="app-loading">
-        <span className="app-loading-text font-display">Loading your study space...</span>
-      </div>
-    )
-  }
+
 
   return (
     <div className="app-root page-pad">
+      {/* Fixed Background Orbs */}
+      <div style={{ zIndex: -1, position: 'fixed', inset: 0, pointerEvents: 'none' }}>
+        <motion.div
+          style={{
+            position: 'absolute',
+            width: 300,
+            height: 300,
+            background: 'rgba(107, 10, 20, 0.5)',
+            borderRadius: '50%',
+            top: -80,
+            left: -60,
+          }}
+          animate={{ y: [0, 30, 0], x: [0, 15, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          style={{
+            position: 'absolute',
+            width: 200,
+            height: 200,
+            background: 'rgba(125, 16, 32, 0.35)',
+            borderRadius: '50%',
+            bottom: '10%',
+            right: -40,
+          }}
+          animate={{ y: [0, -25, 0], x: [0, -10, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+        />
+        <motion.div
+          style={{
+            position: 'absolute',
+            width: 120,
+            height: 120,
+            background: 'rgba(125, 170, 150, 0.06)',
+            borderRadius: '50%',
+            top: '50%',
+            left: '20%',
+          }}
+          animate={{ y: [0, -18, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 7 }}
+        />
+      </div>
+
       {/* Header */}
       <header className="app-header">
         <div className="app-header-left">
-          <span className="app-logo font-display">Pomo</span>
+          <span className="app-logo font-display">Dr.Suru</span>
           <span className="app-logo-icon">🩺</span>
         </div>
 
-        <div className="app-header-center">
+        <motion.div
+          className="app-header-center"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0 }}
+        >
           <h1 className="app-greeting font-display">
             Hey{' '}
             <EditableName name={displayName} onSave={handleNameSave} />
-            , time to grind! 💪
+            , time to grind! 😋
           </h1>
-        </div>
+        </motion.div>
 
         <div className="app-header-right">
-          <span className="app-streak-badge">🔥 {streakDays} days</span>
+          <motion.span
+            className="app-streak-badge"
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            🔥 {streakDays} days
+          </motion.span>
         </div>
       </header>
 
       {/* Main grid */}
       <main className="app-grid">
-        <div className="app-col-left">
-          <Timer timerHook={timerHook} />
-        </div>
+        <motion.div
+          className="app-col-left"
+          initial={{ x: -60, opacity: 0, rotateY: -8 }}
+          animate={{ x: 0, opacity: 1, rotateY: 0 }}
+          transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.1 }}
+          style={{ transformPerspective: 1000 }}
+        >
+          {isLoading ? <SkeletonTimerCard /> : <Timer timerHook={timerHook} />}
+        </motion.div>
         <div className="app-col-right">
-          <Stats stats={stats} updateStats={updateStats} />
-          <TodoList todosHook={todosHook} onTaskComplete={handleTaskComplete} />
+          {isLoading ? <SkeletonStatsCard /> : (
+            <motion.div
+              initial={{ y: -40, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.25 }}
+            >
+              <Stats stats={stats} updateStats={updateStats} />
+            </motion.div>
+          )}
+          {isLoading ? <SkeletonTodoCard /> : (
+            <motion.div
+              initial={{ x: 60, opacity: 0, rotateY: 8 }}
+              animate={{ x: 0, opacity: 1, rotateY: 0 }}
+              transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.4 }}
+              style={{ transformPerspective: 1000 }}
+            >
+              <TodoList todosHook={todosHook} onTaskComplete={handleTaskComplete} />
+            </motion.div>
+          )}
         </div>
       </main>
 

@@ -56,7 +56,7 @@ function WeeklyChart({ weeklyData }) {
                 className={`stats-chart-bar-fill ${isToday ? 'stats-chart-bar-fill--today' : ''}`}
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPct}%` }}
-                transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20, delay: i * 0.04 }}
               />
             </div>
             <span className={`stats-chart-day ${isToday ? 'stats-chart-day--today' : ''}`}>
@@ -92,18 +92,46 @@ export default function Stats({ stats, updateStats }) {
 
       {/* Row 1 — Metric cards */}
       <div className="stats-metrics-grid">
-        <MetricCard emoji="🍅" value={totalSessions} label="Sessions Total" />
-        <MetricCard emoji="⏱" value={formatHours(totalMinutes)} label="Total Hours" />
-        <MetricCard emoji="🔥" value={streakDays} label="Day Streak">
-          <span className="stats-streak-badge">{streakDays}d streak</span>
-        </MetricCard>
-        <MetricCard
-          emoji="🎯"
-          value={`${sessionsToday} / ${dailyGoal}`}
-          label="Today"
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.3 }}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          {goalHit && <span className="stats-goal-hit">🎉 Goal hit!</span>}
-        </MetricCard>
+          <MetricCard emoji="🍅" value={totalSessions} label="Sessions Total" />
+        </motion.div>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.38 }}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
+          <MetricCard emoji="⏱" value={formatHours(totalMinutes)} label="Total Hours" />
+        </motion.div>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.46 }}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
+          <MetricCard emoji="🔥" value={streakDays} label="Day Streak">
+            <span className="stats-streak-badge">{streakDays}d streak</span>
+          </MetricCard>
+        </motion.div>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.54 }}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
+          <MetricCard
+            emoji="🎯"
+            value={`${sessionsToday} / ${dailyGoal}`}
+            label="Today"
+          >
+            {goalHit && <span className="stats-goal-hit">🎉 Goal hit!</span>}
+          </MetricCard>
+        </motion.div>
       </div>
 
       {/* Row 2 — Weekly chart */}
