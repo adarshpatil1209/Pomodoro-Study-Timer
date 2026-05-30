@@ -13,24 +13,74 @@ export function useStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchStats = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('id', 1)
-      .single()
-
-    if (error) {
-      console.error('Error fetching stats:', error)
-    } else {
-      setStats(data)
-    }
-    setLoading(false)
-  }, [])
-
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false)
+      setStats((prev) => prev || {
+        id: 1,
+        name: 'love',
+        display_name: 'love',
+        total_sessions: 0,
+        total_minutes: 0,
+        streak_days: 0,
+        last_study_date: null,
+        daily_goal: 8,
+        sessions_today: 0,
+        weekly_data: [0, 0, 0, 0, 0, 0, 0]
+      })
+    }, 5000)
+
+    const fetchStats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_stats')
+          .select('*')
+          .eq('id', 1)
+          .single()
+
+        if (error) {
+          console.error('Supabase error:', error)
+          // Even on error, stop loading — show app with defaults
+          setStats((prev) => prev || {
+            id: 1,
+            name: 'love',
+            display_name: 'love',
+            total_sessions: 0,
+            total_minutes: 0,
+            streak_days: 0,
+            last_study_date: null,
+            daily_goal: 8,
+            sessions_today: 0,
+            weekly_data: [0, 0, 0, 0, 0, 0, 0]
+          })
+        } else {
+          setStats(data)
+        }
+      } catch (err) {
+        console.error('Fetch failed:', err)
+        // Fallback default so app never stays stuck
+        setStats((prev) => prev || {
+          id: 1,
+          name: 'love',
+          display_name: 'love',
+          total_sessions: 0,
+          total_minutes: 0,
+          streak_days: 0,
+          last_study_date: null,
+          daily_goal: 8,
+          sessions_today: 0,
+          weekly_data: [0, 0, 0, 0, 0, 0, 0]
+        })
+      } finally {
+        clearTimeout(timeout)
+        setLoading(false) // ALWAYS runs — skeleton always clears
+      }
+    }
+
     fetchStats()
-  }, [fetchStats])
+
+    return () => clearTimeout(timeout)
+  }, [])
 
   const updateStats = useCallback(async (patch) => {
     const { error } = await supabase

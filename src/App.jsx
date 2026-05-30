@@ -97,20 +97,13 @@ function EditableName({ name, onSave }) {
 
 export default function App() {
   // --- Hooks ---
-  const { stats, loading, updateStats, addSession } = useStats()
+  const { stats, loading: statsLoading, updateStats, addSession } = useStats()
 
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = statsLoading
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const [eodVisible, setEodVisible] = useState(false)
   const [eodDismissed, setEodDismissed] = useState(false)
-
-  // Transition from skeleton to real content when stats arrive
-  useEffect(() => {
-    if (stats !== null) {
-      setIsLoading(false)
-    }
-  }, [stats])
 
   const { bannerType, bannerVisible, showBanner, hideBanner } = useSessionBanner()
 
@@ -160,6 +153,7 @@ export default function App() {
   const todosHook = useTodos({
     onComplete: handleTaskComplete,
   })
+  const { loading: todosLoading } = todosHook
 
   // EndOfDay: auto-show after 9pm if not dismissed
   useEffect(() => {
@@ -249,7 +243,7 @@ export default function App() {
       </div>
 
       {/* Header */}
-      <header className="app-header">
+      <header className="app-header header">
         <div className="app-header-left">
           <span className="app-logo font-display">Dr.Suru</span>
           <span className="app-logo-icon">🩺</span>
@@ -264,7 +258,7 @@ export default function App() {
           <h1 className="app-greeting font-display">
             Hey{' '}
             <EditableName name={displayName} onSave={handleNameSave} />
-            , time to grind! 😋
+            , time to grind!
           </h1>
         </motion.div>
 
@@ -300,7 +294,7 @@ export default function App() {
               <Stats stats={stats} updateStats={updateStats} />
             </motion.div>
           )}
-          {isLoading ? <SkeletonTodoCard /> : (
+          {todosLoading ? <SkeletonTodoCard /> : (
             <motion.div
               initial={{ x: 60, opacity: 0, rotateY: 8 }}
               animate={{ x: 0, opacity: 1, rotateY: 0 }}

@@ -3,28 +3,32 @@ import { supabase } from '../lib/supabase'
 
 export function useTodos({ onComplete } = {}) {
   const [todos, setTodos] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const onCompleteRef = useRef(onComplete)
   useEffect(() => {
     onCompleteRef.current = onComplete
   }, [onComplete])
 
-  const fetchTodos = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('todos')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching todos:', error)
-    } else {
-      setTodos(data || [])
-    }
-  }, [])
-
   useEffect(() => {
+    const fetchTodos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('todos')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        setTodos(data || [])
+      } catch (err) {
+        console.error('Todos fetch failed:', err)
+        setTodos([])
+      } finally {
+        setLoading(false)
+      }
+    }
     fetchTodos()
-  }, [fetchTodos])
+  }, [])
 
   const addTodo = useCallback(async (text, subject, priority) => {
     const { data, error } = await supabase
@@ -82,5 +86,5 @@ export function useTodos({ onComplete } = {}) {
     setTodos((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  return { todos, addTodo, toggleTodo, deleteTodo }
+  return { todos, loading, addTodo, toggleTodo, deleteTodo }
 }

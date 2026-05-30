@@ -23,17 +23,30 @@
 }
 
 /* --- Header --- */
-.app-header {
+header, .app-header, .header {
   position: sticky;
   top: 0;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 0;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border-soft);
+  padding: 16px 28px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  box-shadow: none;
   margin-bottom: 24px;
+}
+
+.logo, .logo-wrap, .app-name {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .app-header-left {
@@ -41,6 +54,10 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .app-logo {
@@ -50,6 +67,9 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #F5EFE6;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .app-logo-icon {
