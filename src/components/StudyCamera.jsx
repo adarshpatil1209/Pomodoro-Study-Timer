@@ -48,6 +48,7 @@ export default function StudyCamera({ isOpen, onClose }) {
   const iceCandidateBuffer = useRef([])
   const remoteDescSet = useRef(false)
   const messageTimers = useRef([])
+  const constraintsRef = useRef(null)
 
   // Initialize channel on mount always
   useEffect(() => {
@@ -148,8 +149,19 @@ export default function StudyCamera({ isOpen, onClose }) {
 
     pc.ontrack = (event) => {
       console.log('HER: got remote stream from viewer')
-      setRemoteStream(event.streams[0])
+      const stream = event.streams[0]
+      setRemoteStream(stream)
       setConnectionStatus('connected')
+      
+      // Force attach with slight delay
+      setTimeout(() => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream
+          remoteVideoRef.current.play()
+            .then(() => console.log('HER: remote video playing'))
+            .catch(e => console.error('HER: play error', e))
+        }
+      }, 100)
     }
 
     pc.onicecandidate = (event) => {
@@ -168,14 +180,14 @@ export default function StudyCamera({ isOpen, onClose }) {
       if (pc.connectionState === 'failed') setConnectionStatus('failed')
     }
 
-    pc.createOffer().then(offer => {
-      pc.setLocalDescription(offer)
+    pc.createOffer().then(async (offer) => {
+      await pc.setLocalDescription(offer)
       channelRef.current.send({
         type: 'broadcast',
         event: 'offer',
-        payload: { sdp: pc.localDescription }
+        payload: { sdp: offer }
       })
-      console.log('HER: sent offer')
+      console.log('HER: sent offer with type:', offer.type)
     })
   }
 
@@ -257,6 +269,15 @@ export default function StudyCamera({ isOpen, onClose }) {
   // DRAGGABLE PANEL using framer-motion drag
   return (
     <>
+      <div 
+        ref={constraintsRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
       {/* Camera toggle button - fixed bottom left */}
       {!isCameraActive && (
         <motion.button
@@ -306,12 +327,9 @@ export default function StudyCamera({ isOpen, onClose }) {
         {isCameraActive && (
           <motion.div
             drag
+            dragConstraints={constraintsRef}
+            dragElastic={0}
             dragMomentum={false}
-            dragConstraints={{
-              top: 0, left: 0,
-              right: window.innerWidth - (isMinimized ? 170 : 300),
-              bottom: window.innerHeight - (isMinimized ? 130 : 500)
-            }}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -335,12 +353,15 @@ export default function StudyCamera({ isOpen, onClose }) {
               <div style={{ position: 'relative', width: '160px', height: '120px' }}>
                 <video
                   ref={remoteVideoRef}
-                  autoPlay playsInline
+                  autoPlay
+                  playsInline
+                  muted={false}
                   style={{
                     width: '100%', height: '100%',
                     objectFit: 'cover', borderRadius: '16px',
                     border: '1px solid rgba(200,184,154,0.20)',
-                    background: '#3D0408'
+                    background: '#3D0408',
+                    display: 'block'
                   }}
                 />
                 {/* expand button */}
@@ -424,11 +445,14 @@ export default function StudyCamera({ isOpen, onClose }) {
                 <div style={{ position: 'relative', marginBottom: '8px' }}>
                   <video
                     ref={remoteVideoRef}
-                    autoPlay playsInline
+                    autoPlay
+                    playsInline
+                    muted={false}
                     style={{
                       width: '100%', borderRadius: '12px',
                       background: '#3D0408', maxHeight: '140px',
-                      objectFit: 'cover'
+                      objectFit: 'cover',
+                      display: 'block'
                     }}
                   />
                   <span style={{

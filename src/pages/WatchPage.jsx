@@ -141,9 +141,9 @@ export default function WatchPage() {
         await pc.setLocalDescription(answer)
         channel.send({
           type: 'broadcast', event: 'answer',
-          payload: { sdp: pc.localDescription }
+          payload: { sdp: answer }
         })
-        console.log('VIEWER: sent answer')
+        console.log('VIEWER: sent answer with type:', answer.type)
       } catch (e) {
         console.error('VIEWER: offer handling error', e)
       }
@@ -204,8 +204,18 @@ export default function WatchPage() {
 
     pc.ontrack = (event) => {
       console.log('VIEWER: got her stream!')
-      setHerStream(event.streams[0])
+      const stream = event.streams[0]
+      setHerStream(stream)
       setConnectionStatus('connected')
+      
+      setTimeout(() => {
+        if (herVideoRef.current) {
+          herVideoRef.current.srcObject = stream
+          herVideoRef.current.play()
+            .then(() => console.log('VIEWER: her video playing'))
+            .catch(e => console.error('VIEWER: play error', e))
+        }
+      }, 100)
     }
 
     pc.onicecandidate = (event) => {
@@ -407,10 +417,16 @@ export default function WatchPage() {
           {herStream ? (
             <video
               ref={herVideoRef}
-              autoPlay playsInline
+              autoPlay
+              playsInline
+              muted={false}
               style={{
-                width: '100%', aspectRatio: '4/3',
-                objectFit: 'cover', display: 'block'
+                width: '100%',
+                borderRadius: '24px',
+                background: '#3D0408',
+                objectFit: 'cover',
+                aspectRatio: '4/3',
+                display: 'block'
               }}
             />
           ) : (
