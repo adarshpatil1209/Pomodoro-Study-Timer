@@ -12,7 +12,9 @@ import SessionBanner, { useSessionBanner } from './components/SessionBanner'
 import EndOfDayModal from './components/EndOfDayModal'
 import { SkeletonTimerCard, SkeletonStatsCard, SkeletonTodoCard } from './components/Skeleton'
 import { fireGoalConfetti } from './utils/confetti'
+import { Routes, Route } from 'react-router-dom'
 import StudyCamera, { StudyCameraToggle } from './components/StudyCamera'
+import WatchPage from './pages/WatchPage'
 import './App.css'
 
 function HibiscusSVG() {
@@ -96,7 +98,7 @@ function EditableName({ name, onSave }) {
   )
 }
 
-export default function App() {
+function MainApp() {
   // --- Hooks ---
   const { stats, loading: statsLoading, updateStats, addSession } = useStats()
   const [cameraOpen, setCameraOpen] = useState(false)
@@ -339,5 +341,14 @@ export default function App() {
       {/* Decorative hibiscus */}
       <HibiscusSVG />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="/watch" element={<WatchPage />} />
+    </Routes>
   )
 }

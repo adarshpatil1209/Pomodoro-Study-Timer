@@ -264,6 +264,11 @@ export default function WatchPage() {
     }
   }, [viewerStream])
 
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault()
+    checkPassword()
+  }
+
   // ══════════════════════════════════════════════════════════════
   // ── AUTH SCREEN ──────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
@@ -333,10 +338,6 @@ export default function WatchPage() {
   // ══════════════════════════════════════════════════════════════
   // ── MAIN WATCH UI ────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault()
-    checkPassword()
-  }
 
   const getStatusPill = () => {
     if (connectionStatus === 'connected') {
