@@ -123,29 +123,54 @@ export default function WatchPage() {
 
     // Receive offer from her
     channel.on('broadcast', { event: 'offer' }, async ({ payload }) => {
-      console.log('VIEWER: received offer')
-      if (!pcRef.current) await createPeerConnection()
+      console.log('VIEWER: received offer, type:', payload.sdp?.type)
       
+      // Validate offer before processing
+      if (!payload.sdp || !payload.sdp.type) {
+        console.error('VIEWER: invalid offer received, ignoring')
+        return
+      }
+      
+      // Always create fresh peer connection for each offer
+      if (pcRef.current) {
+        pcRef.current.close()
+        pcRef.current = null
+      }
+      remoteDescSet.current = false
+      iceCandidateBuffer.current = []
+      
+      await createPeerConnection()
       const pc = pcRef.current
+      
       try {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+        await pc.setRemoteDescription(
+          new RTCSessionDescription(payload.sdp)
+        )
         remoteDescSet.current = true
+        console.log('VIEWER: remote description set successfully')
         
         // flush buffered ICE
         for (const c of iceCandidateBuffer.current) {
-          await pc.addIceCandidate(new RTCIceCandidate(c))
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(c))
+          } catch (e) {
+            console.error('VIEWER: ICE flush error', e)
+          }
         }
         iceCandidateBuffer.current = []
         
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
-        channel.send({
-          type: 'broadcast', event: 'answer',
+        
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'answer',
           payload: { sdp: answer }
         })
-        console.log('VIEWER: sent answer with type:', answer.type)
+        console.log('VIEWER: answer sent, type:', answer.type)
+        
       } catch (e) {
-        console.error('VIEWER: offer handling error', e)
+        console.error('VIEWER: offer handling failed', e)
       }
     })
 

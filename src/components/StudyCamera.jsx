@@ -49,6 +49,7 @@ export default function StudyCamera({ isOpen, onClose }) {
   const remoteDescSet = useRef(false)
   const messageTimers = useRef([])
   const constraintsRef = useRef(null)
+  const offerSentRef = useRef(false)
 
   // Initialize channel on mount always
   useEffect(() => {
@@ -124,6 +125,7 @@ export default function StudyCamera({ isOpen, onClose }) {
       viewerReadyRef.current = false
       remoteDescSet.current = false
       iceCandidateBuffer.current = []
+      offerSentRef.current = false
     })
 
     channel.subscribe(async (status) => {
@@ -137,6 +139,12 @@ export default function StudyCamera({ isOpen, onClose }) {
   }, [])
 
   const createPeerConnection = (stream) => {
+    if (offerSentRef.current) {
+      console.log('HER: offer already sent, skipping duplicate')
+      return
+    }
+    offerSentRef.current = true
+
     if (pcRef.current) { pcRef.current.close() }
     remoteDescSet.current = false
     iceCandidateBuffer.current = []
@@ -176,6 +184,9 @@ export default function StudyCamera({ isOpen, onClose }) {
 
     pc.onconnectionstatechange = () => {
       console.log('HER connection state:', pc.connectionState)
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        offerSentRef.current = false  // allow retry
+      }
       if (pc.connectionState === 'connected') setConnectionStatus('connected')
       if (pc.connectionState === 'failed') setConnectionStatus('failed')
     }
@@ -221,6 +232,7 @@ export default function StudyCamera({ isOpen, onClose }) {
     setLocalActive(false)
     setRemoteStream(null)
     setConnectionStatus('idle')
+    offerSentRef.current = false
     onClose?.()
   }
 
