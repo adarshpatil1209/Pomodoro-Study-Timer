@@ -12,6 +12,7 @@ import SessionBanner, { useSessionBanner } from './components/SessionBanner'
 import EndOfDayModal from './components/EndOfDayModal'
 import { SkeletonTimerCard, SkeletonStatsCard, SkeletonTodoCard } from './components/Skeleton'
 import { fireGoalConfetti } from './utils/confetti'
+import StudyCamera, { StudyCameraToggle } from './components/StudyCamera'
 import './App.css'
 
 function HibiscusSVG() {
@@ -98,6 +99,7 @@ function EditableName({ name, onSave }) {
 export default function App() {
   // --- Hooks ---
   const { stats, loading: statsLoading, updateStats, addSession } = useStats()
+  const [cameraOpen, setCameraOpen] = useState(false)
 
   const isLoading = statsLoading
   const [toastMsg, setToastMsg] = useState('')
@@ -262,7 +264,7 @@ export default function App() {
           </h1>
         </motion.div>
 
-        <div className="app-header-right">
+        <div className="app-header-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <motion.span
             className="app-streak-badge"
             animate={{ y: [0, -3, 0] }}
@@ -270,6 +272,10 @@ export default function App() {
           >
             🔥 {streakDays} days
           </motion.span>
+          <StudyCameraToggle
+            isOn={cameraOpen}
+            onToggle={() => setCameraOpen((v) => !v)}
+          />
         </div>
       </header>
 
@@ -309,6 +315,8 @@ export default function App() {
 
       {/* Fixed elements */}
       <MusicPlayer />
+
+      <StudyCamera isOpen={cameraOpen} onClose={() => setCameraOpen(false)} />
 
       <Toast
         message={toastMsg}
