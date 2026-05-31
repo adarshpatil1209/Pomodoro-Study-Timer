@@ -371,25 +371,35 @@
 .sc-messages::-webkit-scrollbar { display: none; }
 
 .sc-msg {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  padding: 4px 9px;
-  border-radius: 9px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 12px;
   max-width: 85%;
   word-break: break-word;
   line-height: 1.35;
+  color: #F5EFE6;
 }
 
 .sc-msg-self {
   background: rgba(200, 184, 154, 0.15);
-  color: var(--accent);
+  color: #F5EFE6;
   align-self: flex-end;
 }
 
 .sc-msg-other {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-secondary);
+  background: rgba(107, 10, 20, 0.8);
+  color: #F5EFE6;
   align-self: flex-start;
+}
+
+.sc-msg-label {
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 600;
+  margin-right: 2px;
 }
 
 .sc-chat-form {

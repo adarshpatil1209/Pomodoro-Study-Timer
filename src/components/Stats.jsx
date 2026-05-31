@@ -1,6 +1,4 @@
-import { useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Minus, Plus } from 'lucide-react'
 import './Stats.css'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -71,8 +69,6 @@ function WeeklyChart({ weeklyData }) {
 }
 
 export default function Stats({ stats, updateStats }) {
-  const isUpdating = useRef(false)
-
   if (!stats) return null
 
   const totalSessions = stats.total_sessions || 0
@@ -82,15 +78,7 @@ export default function Stats({ stats, updateStats }) {
   const dailyGoal = stats.daily_goal || 8
   const goalHit = sessionsToday >= dailyGoal
 
-  const handleGoalChange = async (delta) => {
-    if (isUpdating.current) return  // block if already updating
-    isUpdating.current = true
 
-    const newGoal = Math.max(1, Math.min(20, stats.daily_goal + delta))
-    await updateStats({ daily_goal: newGoal })
-
-    isUpdating.current = false
-  }
 
   return (
     <div className="stats-section">
@@ -145,25 +133,6 @@ export default function Stats({ stats, updateStats }) {
         <span className="section-label">THIS WEEK</span>
         <WeeklyChart weeklyData={stats.weekly_data} />
 
-        {/* Daily goal setter */}
-        <div className="stats-goal-setter">
-          <span className="stats-goal-label">Daily goal:</span>
-          <button
-            className="stats-goal-btn"
-            onClick={() => handleGoalChange(-1)}
-            aria-label="Decrease goal"
-          >
-            −
-          </button>
-          <span className="stats-goal-value">{stats.daily_goal || 8}</span>
-          <button
-            className="stats-goal-btn"
-            onClick={() => handleGoalChange(1)}
-            aria-label="Increase goal"
-          >
-            +
-          </button>
-        </div>
       </div>
     </div>
   )

@@ -1,312 +1,524 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useWebRTC } from '../hooks/useWebRTC'
-import './StudyCamera.css'
+import { supabase } from '../lib/supabase'
+
+const CHANNEL_NAME = 'studywatch-v2'
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ]
+}
 
 export default function StudyCamera({ isOpen, onClose }) {
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [cameraOn, setCameraOn] = useState(false)
+  const [isBeingWatched, setIsBeingWatched] = useState(false)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
-  const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [remoteStream, setRemoteStream] = useState(null)
+  const [connectionStatus, setConnectionStatus] = useState('idle')
+  // idle | connecting | connected | failed
+
+  const [localActive, setLocalActive] = useState(false)
+  const isCameraActive = isOpen !== undefined ? (isOpen || localActive) : cameraOn
 
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
-  const miniVideoRef = useRef(null)   // separate ref for minimized video
-  const messagesEndRef = useRef(null)
+  const localStreamRef = useRef(null)
+  const pcRef = useRef(null)
+  const channelRef = useRef(null)
+  const viewerReadyRef = useRef(false)
+  const iceCandidateBuffer = useRef([])
+  const remoteDescSet = useRef(false)
+  const messageTimers = useRef([])
 
-  const handleChat = useCallback((payload) => {
-    setMessages((prev) => [...prev, { ...payload, self: false }])
+  // Initialize channel on mount always
+  useEffect(() => {
+    const channel = supabase.channel(CHANNEL_NAME, {
+      config: { broadcast: { self: false }, presence: { key: 'her' } }
+    })
+    channelRef.current = channel
+
+    // Listen for viewer-ready
+    channel.on('broadcast', { event: 'viewer-ready' }, () => {
+      console.log('HER: viewer ready received')
+      viewerReadyRef.current = true
+      setIsBeingWatched(true)
+      if (localStreamRef.current) {
+        createPeerConnection(localStreamRef.current)
+      }
+    })
+
+    // Listen for answer from viewer
+    channel.on('broadcast', { event: 'answer' }, async ({ payload }) => {
+      console.log('HER: received answer')
+      if (!pcRef.current) return
+      try {
+        await pcRef.current.setRemoteDescription(
+          new RTCSessionDescription(payload.sdp)
+        )
+        remoteDescSet.current = true
+        // flush buffered ICE
+        for (const c of iceCandidateBuffer.current) {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(c))
+        }
+        iceCandidateBuffer.current = []
+      } catch (e) {
+        console.error('HER: answer error', e)
+      }
+    })
+
+    // Listen for ICE from viewer
+    channel.on('broadcast', { event: 'ice-viewer' }, async ({ payload }) => {
+      if (!payload.candidate) return
+      if (remoteDescSet.current && pcRef.current) {
+        try {
+          await pcRef.current.addIceCandidate(
+            new RTCIceCandidate(payload.candidate)
+          )
+        } catch (e) { console.error('HER: ICE error', e) }
+      } else {
+        iceCandidateBuffer.current.push(payload.candidate)
+      }
+    })
+
+    // Listen for chat from viewer
+    channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+      if (payload.from === 'viewer') {
+        const msg = { ...payload, id: Date.now() + Math.random() }
+        setMessages(prev => [...prev.slice(-3), msg])
+        // auto remove after 15s
+        const t = setTimeout(() => {
+          setMessages(prev => prev.filter(m => m.id !== msg.id))
+        }, 15000)
+        messageTimers.current.push(t)
+      }
+    })
+
+    // Listen for viewer-left
+    channel.on('broadcast', { event: 'viewer-left' }, () => {
+      console.log('HER: viewer left')
+      setIsBeingWatched(false)
+      setRemoteStream(null)
+      setMessages([])
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
+      if (pcRef.current) { pcRef.current.close(); pcRef.current = null }
+      viewerReadyRef.current = false
+      remoteDescSet.current = false
+      iceCandidateBuffer.current = []
+    })
+
+    channel.subscribe(async (status) => {
+      console.log('HER channel status:', status)
+    })
+
+    return () => {
+      messageTimers.current.forEach(clearTimeout)
+      channel.unsubscribe()
+    }
   }, [])
 
-  const {
-    localStream,
-    remoteStream,
-    cameraStatus,
-    getCameraPermission,
-    destroyPeer,
-    stopCamera,
-    sendChat,
-  } = useWebRTC({
-    enabled: isOpen,
-    isInitiator: true,
-    presenceKey: 'host',
-    onChat: handleChat,
-  })
+  const createPeerConnection = (stream) => {
+    if (pcRef.current) { pcRef.current.close() }
+    remoteDescSet.current = false
+    iceCandidateBuffer.current = []
 
-  // ── Camera on open / cleanup on close ────────────────────────────────────
-  useEffect(() => {
-    if (isOpen) {
-      setBannerDismissed(false)
-      setIsMinimized(false)
-      getCameraPermission()
-    } else {
-      destroyPeer()
-      stopCamera()
-      setMessages([])
-    }
-  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+    const pc = new RTCPeerConnection(ICE_SERVERS)
+    pcRef.current = pc
+    setConnectionStatus('connecting')
 
-  // ── Wire local stream → full-panel video ─────────────────────────────────
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream
-      localVideoRef.current.play().catch(() => { })
-    }
-  }, [localStream])
+    stream.getTracks().forEach(track => pc.addTrack(track, stream))
 
-  // ── Wire remote stream → full-panel + mini video ─────────────────────────
-  useEffect(() => {
-    if (!remoteStream) return
-    console.log('[StudyCamera] Got remote stream', remoteStream)
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream
-      remoteVideoRef.current.play().catch((e) => console.log('[SC] remote play err', e))
+    pc.ontrack = (event) => {
+      console.log('HER: got remote stream from viewer')
+      setRemoteStream(event.streams[0])
+      setConnectionStatus('connected')
     }
-    if (miniVideoRef.current) {
-      miniVideoRef.current.srcObject = remoteStream
-      miniVideoRef.current.play().catch(() => { })
-    }
-  }, [remoteStream])
 
-  // When switching back from minimized, re-attach stream to full panel ref
-  useEffect(() => {
-    if (!isMinimized && remoteStream && remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream
-      remoteVideoRef.current.play().catch(() => { })
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'ice-her',
+          payload: { candidate: event.candidate }
+        })
+      }
     }
-    if (isMinimized && remoteStream && miniVideoRef.current) {
-      miniVideoRef.current.srcObject = remoteStream
-      miniVideoRef.current.play().catch(() => { })
+
+    pc.onconnectionstatechange = () => {
+      console.log('HER connection state:', pc.connectionState)
+      if (pc.connectionState === 'connected') setConnectionStatus('connected')
+      if (pc.connectionState === 'failed') setConnectionStatus('failed')
     }
-  }, [isMinimized]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-scroll chat ──────────────────────────────────────────────────────
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    pc.createOffer().then(offer => {
+      pc.setLocalDescription(offer)
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'offer',
+        payload: { sdp: pc.localDescription }
+      })
+      console.log('HER: sent offer')
+    })
+  }
 
-  const handleSendChat = (e) => {
-    e.preventDefault()
+  const startCamera = async () => {
+    if (localStreamRef.current) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 240, facingMode: 'user' },
+        audio: false
+      })
+      localStreamRef.current = stream
+      setCameraOn(true)
+      setLocalActive(true)
+      if (viewerReadyRef.current) {
+        createPeerConnection(stream)
+      }
+    } catch (err) {
+      console.error('Camera error:', err)
+      alert('Camera permission needed. Click the lock icon in address bar → Allow Camera → Refresh.')
+      onClose?.()
+    }
+  }
+
+  const stopCamera = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop())
+      localStreamRef.current = null
+    }
+    if (pcRef.current) { pcRef.current.close(); pcRef.current = null }
+    setCameraOn(false)
+    setLocalActive(false)
+    setRemoteStream(null)
+    setConnectionStatus('idle')
+    onClose?.()
+  }
+
+  const sendMessage = () => {
     if (!chatInput.trim()) return
-    const payload = sendChat(chatInput, 'her')
-    if (payload) setMessages((prev) => [...prev, { ...payload, self: true }])
+    const msg = { text: chatInput, from: 'her', id: Date.now(), time: Date.now() }
+    channelRef.current.send({
+      type: 'broadcast', event: 'chat', payload: msg
+    })
+    setMessages(prev => [...prev.slice(-3), msg])
     setChatInput('')
+    const t = setTimeout(() => {
+      setMessages(prev => prev.filter(m => m.id !== msg.id))
+    }, 15000)
+    messageTimers.current.push(t)
   }
 
-  const handleRetryCamera = () => {
-    setBannerDismissed(false)
-    getCameraPermission()
-  }
+  // Sync with isOpen prop from App.jsx controls
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      if (isOpen) {
+        if (!localStreamRef.current) {
+          startCamera()
+        }
+      } else {
+        if (localStreamRef.current) {
+          stopCamera()
+        }
+      }
+    }
+  }, [isOpen])
 
-  const showDeniedBanner = cameraStatus === 'denied' && !bannerDismissed
+  // Securely wire video elements inside conditional mounts
+  useEffect(() => {
+    if (isCameraActive && localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current
+    }
+  }, [isCameraActive, isMinimized])
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream
+    }
+  }, [remoteStream, isMinimized])
 
+  // DRAGGABLE PANEL using framer-motion drag
   return (
     <>
-      {/* ── Camera denied banner — fixed top-center ── */}
+      {/* Camera toggle button - fixed bottom left */}
+      {!isCameraActive && (
+        <motion.button
+          onClick={startCamera}
+          style={{
+            position: 'fixed', bottom: 80, left: 20, zIndex: 100,
+            background: '#6B0A14', border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: '999px', padding: '8px 16px',
+            color: '#C8B89A', fontFamily: 'DM Sans', fontSize: '12px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+          }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+        >
+          📷 Study Cam
+        </motion.button>
+      )}
+
+      {/* Watching indicator */}
       <AnimatePresence>
-        {showDeniedBanner && (
+        {isBeingWatched && (
           <motion.div
-            className="sc-denied-banner"
-            initial={{ y: -60, opacity: 0 }}
+            initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -60, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+            exit={{ y: -40, opacity: 0 }}
+            style={{
+              position: 'fixed', top: 70, left: '50%',
+              transform: 'translateX(-50%)', zIndex: 200,
+              background: 'rgba(107,10,20,0.95)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              borderRadius: '999px', padding: '8px 20px',
+              fontFamily: 'Cormorant Garamond', fontStyle: 'italic',
+              fontSize: '15px', color: '#F5EFE6', whiteSpace: 'nowrap'
+            }}
           >
-            <button
-              className="sc-denied-close"
-              onClick={() => setBannerDismissed(true)}
-              aria-label="Dismiss"
-            >
-              ✕
-            </button>
-            <p className="sc-denied-title font-display">
-              📷 Camera blocked — he wants to see you study!
-            </p>
-            <p className="sc-denied-subtitle font-display">
-              Click the 🔒 icon in your browser address bar → Allow Camera
-            </p>
-            <div className="sc-denied-steps">
-              <span>Chrome: 🔒 lock icon → Camera → Allow → Refresh</span>
-              <span>Safari: Settings → Websites → Camera → Allow</span>
-            </div>
-            <button className="btn-primary sc-denied-retry" onClick={handleRetryCamera}>
-              Try Again
-            </button>
+            <motion.span
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >👁</motion.span>
+            {' '}watching you study
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════════════════════
-          MINIMIZED STATE — draggable floating pill
-          ══════════════════════════════════════════════════════ */}
+      {/* Camera panel — draggable */}
       <AnimatePresence>
-        {isMinimized && (
+        {isCameraActive && (
           <motion.div
-            className="sc-mini-drag"
             drag
             dragMomentum={false}
             dragConstraints={{
-              top: 0,
-              left: 0,
-              right: typeof window !== 'undefined' ? window.innerWidth - 160 : 800,
-              bottom: typeof window !== 'undefined' ? window.innerHeight - 120 : 600,
+              top: 0, left: 0,
+              right: window.innerWidth - (isMinimized ? 170 : 300),
+              bottom: window.innerHeight - (isMinimized ? 130 : 500)
             }}
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            whileDrag={{ cursor: 'grabbing', scale: 1.05 }}
-            style={{ cursor: 'grab' }}
-          >
-            {/* His video / placeholder */}
-            <div className="sc-mini-video-box">
-              {remoteStream ? (
-                <video
-                  ref={miniVideoRef}
-                  autoPlay
-                  playsInline
-                  className="sc-mini-video"
-                />
-              ) : (
-                <div className="sc-mini-placeholder">
-                  <motion.span
-                    animate={{ opacity: [1, 0.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{ fontSize: 26 }}
-                  >
-
-                  </motion.span>
-                </div>
-              )}
-
-              {/* Expand button — top-right */}
-              <button
-                className="sc-mini-expand"
-                onClick={() => setIsMinimized(false)}
-                title="Expand camera"
-                aria-label="Expand camera panel"
-              >
-                ↗
-              </button>
-
-              {/* Live badge — bottom-left */}
-              <div className="sc-mini-live-badge">
-                <span className="sc-mini-live-dot" />
-                live
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ══════════════════════════════════════════════════════
-          FULL PANEL STATE
-          ══════════════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {!isMinimized && (
-          <motion.div
-            className="sc-panel"
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            style={{
+              position: 'fixed',
+              bottom: isMinimized ? 80 : 20,
+              right: 20,
+              zIndex: 150,
+              cursor: 'grab',
+              width: isMinimized ? '160px' : '280px',
+              background: isMinimized ? 'transparent' : '#6B0A14',
+              borderRadius: '20px',
+              border: isMinimized ? 'none' : '1px solid rgba(255,255,255,0.10)',
+              overflow: 'hidden',
+              userSelect: 'none'
+            }}
+            whileDrag={{ cursor: 'grabbing' }}
           >
-            {/* Header */}
-            <div className="sc-panel-header">
-              <span className="sc-panel-title font-display">📷 Study Cam</span>
-              <button
-                className="sc-panel-minimize"
-                onClick={() => setIsMinimized(true)}
-                title="Minimize"
-                aria-label="Minimize camera panel"
-              >
-                −
-              </button>
-            </div>
-
-            {/* Her own camera — mirrored */}
-            <div className="sc-full-video-wrap">
-              {cameraStatus === 'pending' ? (
-                <div className="sc-cam-pending font-display">
-                  <motion.span
-                    className="sc-pending-dot"
-                    animate={{ opacity: [1, 0.2, 1] }}
-                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  Waiting for camera…
-                </div>
-              ) : cameraStatus === 'denied' ? (
-                <div className="sc-permission-error font-display">
-                  Camera access needed 🎥
-                </div>
-              ) : (
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="sc-full-video sc-mirrored"
-                />
-              )}
-              <span className="sc-full-label">you</span>
-            </div>
-
-            {/* His camera (remote) */}
-            <div className="sc-full-video-wrap">
-              {remoteStream ? (
+            {isMinimized ? (
+              // MINIMIZED — only his video, draggable rectangle
+              <div style={{ position: 'relative', width: '160px', height: '120px' }}>
                 <video
                   ref={remoteVideoRef}
-                  autoPlay
-                  playsInline
-                  className="sc-full-video"
+                  autoPlay playsInline
+                  style={{
+                    width: '100%', height: '100%',
+                    objectFit: 'cover', borderRadius: '16px',
+                    border: '1px solid rgba(200,184,154,0.20)',
+                    background: '#3D0408'
+                  }}
                 />
-              ) : (
-                <div className="sc-full-placeholder">
-                  <motion.span
-                    animate={{ opacity: [1, 0.25, 1] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{ fontSize: 28 }}
-                  >
-
-                  </motion.span>
+                {/* expand button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsMinimized(false) }}
+                  style={{
+                    position: 'absolute', top: 6, right: 6,
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#F5EFE6', fontSize: '10px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >⛶</button>
+                {/* live badge */}
+                <div style={{
+                  position: 'absolute', bottom: 6, left: 6,
+                  background: 'rgba(0,0,0,0.5)', borderRadius: '999px',
+                  padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 4
+                }}>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: connectionStatus === 'connected' ? '#7DAA96' : '#D4893A'
+                  }} />
+                  <span style={{ fontSize: 9, color: '#F5EFE6', fontFamily: 'DM Sans' }}>
+                    {connectionStatus === 'connected' ? 'live' : 'waiting'}
+                  </span>
                 </div>
-              )}
-              <span className="sc-full-label sc-label-him font-display">him</span>
-            </div>
-
-            {/* Chat */}
-            <div className="sc-chat">
-              <div className="sc-messages">
-                {messages.map((msg, i) => (
-                  <motion.div
-                    key={i}
-                    className={`sc-msg ${msg.self ? 'sc-msg-self' : 'sc-msg-other'}`}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    {msg.text}
-                  </motion.div>
-                ))}
-                <div ref={messagesEndRef} />
               </div>
-              <form className="sc-chat-form" onSubmit={handleSendChat}>
-                <input
-                  className="sc-chat-input"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="say hi"
-                />
-                <button type="submit" className="btn-primary sc-chat-send">↑</button>
-              </form>
-            </div>
+            ) : (
+              // FULL PANEL
+              <div style={{ padding: '14px' }}>
+                {/* Header */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'center', marginBottom: '10px'
+                }}>
+                  <span style={{
+                    fontFamily: 'Cormorant Garamond', fontStyle: 'italic',
+                    fontSize: '14px', color: '#C8B89A'
+                  }}>📷 Study Cam</span>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {/* minimize */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsMinimized(true) }}
+                      style={{
+                        width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        color: '#C8B89A', fontSize: '14px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >−</button>
+                    {/* close */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); stopCamera() }}
+                      style={{
+                        width: 24, height: 24, borderRadius: '50%', cursor: 'pointer',
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        color: '#C8B89A', fontSize: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >✕</button>
+                  </div>
+                </div>
 
-            {/* End camera */}
-            <button className="sc-end-btn" onClick={onClose}>
-              End Camera
-            </button>
+                {/* Her video */}
+                <video
+                  ref={localVideoRef}
+                  autoPlay playsInline muted
+                  style={{
+                    width: '100%', borderRadius: '12px',
+                    background: '#3D0408', transform: 'scaleX(-1)',
+                    marginBottom: '8px', maxHeight: '160px',
+                    objectFit: 'cover'
+                  }}
+                />
+
+                {/* His video */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay playsInline
+                    style={{
+                      width: '100%', borderRadius: '12px',
+                      background: '#3D0408', maxHeight: '140px',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <span style={{
+                    position: 'absolute', bottom: 6, left: 8,
+                    fontFamily: 'DM Sans', fontSize: '10px',
+                    color: 'rgba(200,184,154,0.7)',
+                    background: 'rgba(0,0,0,0.4)',
+                    borderRadius: '999px', padding: '2px 6px'
+                  }}>him</span>
+                  {/* connection status */}
+                  <span style={{
+                    position: 'absolute', bottom: 6, right: 8,
+                    fontSize: '9px', color: '#F5EFE6',
+                    background: 'rgba(0,0,0,0.4)',
+                    borderRadius: '999px', padding: '2px 6px',
+                    display: 'flex', alignItems: 'center', gap: 3,
+                    fontFamily: 'DM Sans'
+                  }}>
+                    <span style={{
+                      width: 5, height: 5, borderRadius: '50%', display: 'inline-block',
+                      background: connectionStatus === 'connected' ? '#7DAA96' :
+                        connectionStatus === 'connecting' ? '#D4893A' : '#9A7A6A'
+                    }}/>
+                    {connectionStatus}
+                  </span>
+                </div>
+
+                {/* Messages */}
+                <div style={{ minHeight: '40px', marginBottom: '8px' }}>
+                  <AnimatePresence>
+                    {messages.map(msg => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ x: msg.from === 'her' ? 20 : -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                          textAlign: msg.from === 'her' ? 'right' : 'left',
+                          marginBottom: '4px'
+                        }}
+                      >
+                        <span style={{
+                          display: 'inline-block',
+                          background: msg.from === 'her'
+                            ? 'rgba(200,184,154,0.15)'
+                            : 'rgba(61,4,8,0.9)',
+                          borderRadius: '12px', padding: '5px 10px',
+                          fontFamily: 'Cormorant Garamond, serif',
+                          fontStyle: 'italic', fontSize: '13px',
+                          color: '#F5EFE6',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          maxWidth: '90%'
+                        }}>
+                          {msg.text}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {/* Chat input */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.stopPropagation(); sendMessage() }
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    placeholder="Send a message..."
+                    style={{
+                      flex: 1, background: '#7D1020',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      borderRadius: '10px', padding: '6px 10px',
+                      color: '#F5EFE6', fontFamily: 'DM Sans',
+                      fontSize: '12px', outline: 'none'
+                    }}
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); sendMessage() }}
+                    style={{
+                      background: '#C8B89A', border: 'none',
+                      borderRadius: '10px', padding: '6px 10px',
+                      color: '#6B0A14', fontFamily: 'DM Sans',
+                      fontSize: '12px', fontWeight: 500, cursor: 'pointer'
+                    }}
+                  >↑</button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -314,7 +526,6 @@ export default function StudyCamera({ isOpen, onClose }) {
   )
 }
 
-/* ── Toggle button exported separately for use in App ── */
 export function StudyCameraToggle({ isOn, onToggle }) {
   return (
     <button

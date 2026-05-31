@@ -165,6 +165,21 @@
   color: var(--text-secondary);
 }
 
+/* Reconnect button */
+.wp-reconnect-btn {
+  margin-top: 8px;
+  padding: 8px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.wp-reconnect-btn:hover {
+  opacity: 1;
+}
+
 /* ── Bottom bar (remaining ~40%) ── */
 .wp-bottom {
   flex: 1;
@@ -209,9 +224,17 @@
 }
 
 .wp-msg-other {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(200, 184, 154, 0.10);
   color: var(--text-secondary);
   align-self: flex-start;
+}
+
+.wp-msg-from {
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 600;
+  margin-right: 3px;
 }
 
 /* Chat input row */
