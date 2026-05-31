@@ -15,6 +15,7 @@ import { fireGoalConfetti } from './utils/confetti'
 import { Routes, Route } from 'react-router-dom'
 import StudyCamera, { StudyCameraToggle } from './components/StudyCamera'
 import WatchPage from './pages/WatchPage'
+import ChatWidget from './components/ChatWidget'
 import './App.css'
 
 function HibiscusSVG() {
@@ -317,6 +318,7 @@ function MainApp() {
 
       {/* Fixed elements */}
       <MusicPlayer />
+      <ChatWidget />
 
       <StudyCamera isOpen={cameraOpen} onClose={() => setCameraOpen(false)} />
 

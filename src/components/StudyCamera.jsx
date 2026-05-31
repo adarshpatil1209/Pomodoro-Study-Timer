@@ -29,8 +29,6 @@ const ICE_SERVERS = {
 export default function StudyCamera({ isOpen, onClose }) {
   const [cameraOn, setCameraOn] = useState(false)
   const [isBeingWatched, setIsBeingWatched] = useState(false)
-  const [messages, setMessages] = useState([])
-  const [chatInput, setChatInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
   const [remoteStream, setRemoteStream] = useState(null)
   const [connectionStatus, setConnectionStatus] = useState('idle')
@@ -47,7 +45,6 @@ export default function StudyCamera({ isOpen, onClose }) {
   const viewerReadyRef = useRef(false)
   const iceCandidateBuffer = useRef([])
   const remoteDescSet = useRef(false)
-  const messageTimers = useRef([])
   const constraintsRef = useRef(null)
   const offerSentRef = useRef(false)
 
@@ -101,25 +98,10 @@ export default function StudyCamera({ isOpen, onClose }) {
       }
     })
 
-    // Listen for chat from viewer
-    channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
-      if (payload.from === 'viewer') {
-        const msg = { ...payload, id: Date.now() + Math.random() }
-        setMessages(prev => [...prev.slice(-3), msg])
-        // auto remove after 15s
-        const t = setTimeout(() => {
-          setMessages(prev => prev.filter(m => m.id !== msg.id))
-        }, 15000)
-        messageTimers.current.push(t)
-      }
-    })
-
-    // Listen for viewer-left
     channel.on('broadcast', { event: 'viewer-left' }, () => {
       console.log('HER: viewer left')
       setIsBeingWatched(false)
       setRemoteStream(null)
-      setMessages([])
       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
       if (pcRef.current) { pcRef.current.close(); pcRef.current = null }
       viewerReadyRef.current = false
@@ -133,7 +115,6 @@ export default function StudyCamera({ isOpen, onClose }) {
     })
 
     return () => {
-      messageTimers.current.forEach(clearTimeout)
       channel.unsubscribe()
     }
   }, [])
@@ -234,20 +215,6 @@ export default function StudyCamera({ isOpen, onClose }) {
     setConnectionStatus('idle')
     offerSentRef.current = false
     onClose?.()
-  }
-
-  const sendMessage = () => {
-    if (!chatInput.trim()) return
-    const msg = { text: chatInput, from: 'her', id: Date.now(), time: Date.now() }
-    channelRef.current.send({
-      type: 'broadcast', event: 'chat', payload: msg
-    })
-    setMessages(prev => [...prev.slice(-3), msg])
-    setChatInput('')
-    const t = setTimeout(() => {
-      setMessages(prev => prev.filter(m => m.id !== msg.id))
-    }, 15000)
-    messageTimers.current.push(t)
   }
 
   // Sync with isOpen prop from App.jsx controls
@@ -490,68 +457,6 @@ export default function StudyCamera({ isOpen, onClose }) {
                     }}/>
                     {connectionStatus}
                   </span>
-                </div>
-
-                {/* Messages */}
-                <div style={{ minHeight: '40px', marginBottom: '8px' }}>
-                  <AnimatePresence>
-                    {messages.map(msg => (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ x: msg.from === 'her' ? 20 : -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                          textAlign: msg.from === 'her' ? 'right' : 'left',
-                          marginBottom: '4px'
-                        }}
-                      >
-                        <span style={{
-                          display: 'inline-block',
-                          background: msg.from === 'her'
-                            ? 'rgba(200,184,154,0.15)'
-                            : 'rgba(61,4,8,0.9)',
-                          borderRadius: '12px', padding: '5px 10px',
-                          fontFamily: 'Cormorant Garamond, serif',
-                          fontStyle: 'italic', fontSize: '13px',
-                          color: '#F5EFE6',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          maxWidth: '90%'
-                        }}>
-                          {msg.text}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-
-                {/* Chat input */}
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { e.stopPropagation(); sendMessage() }
-                    }}
-                    onClick={e => e.stopPropagation()}
-                    placeholder="Send a message..."
-                    style={{
-                      flex: 1, background: '#7D1020',
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      borderRadius: '10px', padding: '6px 10px',
-                      color: '#F5EFE6', fontFamily: 'DM Sans',
-                      fontSize: '12px', outline: 'none'
-                    }}
-                  />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); sendMessage() }}
-                    style={{
-                      background: '#C8B89A', border: 'none',
-                      borderRadius: '10px', padding: '6px 10px',
-                      color: '#6B0A14', fontFamily: 'DM Sans',
-                      fontSize: '12px', fontWeight: 500, cursor: 'pointer'
-                    }}
-                  >↑</button>
                 </div>
               </div>
             )}

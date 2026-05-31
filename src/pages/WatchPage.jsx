@@ -43,6 +43,7 @@ export default function WatchPage() {
   const myVideoRef = useRef(null)
   const pcRef = useRef(null)
   const channelRef = useRef(null)
+  const chatChannelRef = useRef(null)
   const viewerStreamRef = useRef(null)
   const iceCandidateBuffer = useRef([])
   const remoteDescSet = useRef(false)
@@ -82,6 +83,19 @@ export default function WatchPage() {
   useEffect(() => {
     if (authed) {
       initWatch()
+
+      const chatChannel = supabase.channel('study-chat', {
+        config: { broadcast: { self: false } }
+      })
+      chatChannelRef.current = chatChannel
+      
+      chatChannel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+        if (payload.from === 'her') {
+          const msg = { ...payload, id: Date.now() + Math.random() }
+          setMessages(prev => [...prev.slice(-20), msg])
+        }
+      })
+      chatChannel.subscribe()
     }
   }, [authed])
 
@@ -97,6 +111,7 @@ export default function WatchPage() {
         pcRef.current = null
       }
       channelRef.current?.unsubscribe()
+      chatChannelRef.current?.unsubscribe()
     }
   }, [])
 
@@ -186,14 +201,6 @@ export default function WatchPage() {
       }
     })
 
-    // Receive chat from her
-    channel.on('broadcast', { event: 'chat' }, ({ payload }) => {
-      if (payload.from === 'her') {
-        const msg = { ...payload, id: Date.now() + Math.random() }
-        setMessages(prev => [...prev.slice(-4), msg])
-      }
-    })
-
     channel.subscribe(async (status) => {
       console.log('VIEWER channel:', status)
       if (status === 'SUBSCRIBED') {
@@ -265,10 +272,10 @@ export default function WatchPage() {
   const sendMessage = () => {
     if (!chatInput.trim()) return
     const msg = { text: chatInput, from: 'viewer', id: Date.now(), time: Date.now() }
-    channelRef.current.send({
+    chatChannelRef.current?.send({
       type: 'broadcast', event: 'chat', payload: msg
     })
-    setMessages(prev => [...prev.slice(-4), msg])
+    setMessages(prev => [...prev, msg])
     setChatInput('')
   }
 
@@ -513,12 +520,20 @@ export default function WatchPage() {
           {/* Section Divider */}
           <div style={{
             borderBottom: '1px solid rgba(255, 255, 255, 0.10)',
-            margin: '4px 0'
+            margin: '4px 0 12px 0'
           }} />
+
+          {/* Section Label */}
+          <div style={{
+            fontFamily: 'DM Sans', fontSize: '11px', fontWeight: 700,
+            color: '#9A7A6A', letterSpacing: '0.08em', marginBottom: '-8px'
+          }}>
+            MESSAGES
+          </div>
 
           {/* Messages list */}
           <div style={{
-            maxHeight: '200px', overflowY: 'auto', display: 'flex',
+            maxHeight: '300px', overflowY: 'auto', display: 'flex',
             flexDirection: 'column', gap: '8px', paddingRight: '4px'
           }}>
             <AnimatePresence>
