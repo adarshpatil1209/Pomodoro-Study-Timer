@@ -32,7 +32,7 @@ export default function WatchPage() {
   const {
     localStream,
     remoteStream,
-    permissionError,
+    cameraStatus,
     getCameraPermission,
     startPeer,
     sendChat,
@@ -47,12 +47,15 @@ export default function WatchPage() {
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream
+      localVideoRef.current.play().catch(() => {})
     }
   }, [localStream])
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
+      console.log('[WatchPage] Got remote stream', remoteStream)
       remoteVideoRef.current.srcObject = remoteStream
+      remoteVideoRef.current.play().catch((e) => console.log('[WatchPage] remote play err', e))
     }
   }, [remoteStream])
 
@@ -61,12 +64,14 @@ export default function WatchPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Start peer once we have a local stream ────────────────────────────────
+  // ── Start peer once we have a local stream (viewer is non-initiator) ───────
+  // Delay slightly so the Supabase channel can finish subscribing first
   useEffect(() => {
-    if (localStream) {
-      startPeer(localStream)
-    }
+    if (!localStream) return
+    const t = setTimeout(() => startPeer(localStream), 700)
+    return () => clearTimeout(t)
   }, [localStream]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // ── On auth: show prompt briefly then request camera ─────────────────────
   useEffect(() => {
@@ -226,7 +231,7 @@ export default function WatchPage() {
 
       {/* ── Your camera — fixed bottom-right ── */}
       <div className="wp-your-wrap">
-        {permissionError ? (
+        {cameraStatus === 'denied' ? (
           <div className="wp-cam-error font-display">
             Camera access<br />needed 🎥
           </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const PRESETS = {
-  '25/5': { focus: 1500, shortBreak: 300 },
+  '25/5':  { focus: 1500, shortBreak: 300 },
   '50/10': { focus: 3000, shortBreak: 600 },
 }
 
-const LONG_BREAK = 1200 // 20 minutes
+const LONG_BREAK   = 1200  // 20 minutes
+const STORAGE_KEY  = 'pomo-timer-state'
 
 function playSineFallback() {
   try {
@@ -37,69 +38,118 @@ function playBell() {
   })
 }
 
+function saveState(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }))
+  } catch { /* storage full or unavailable — silently ignore */ }
+}
+
+function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+}
+
 export function useTimer({ onSessionComplete } = {}) {
-  const [preset, setPresetState] = useState('25/5')
-  const [customFocus, setCustomFocus] = useState(25)
-  const [customBreak, setCustomBreak] = useState(5)
-  const [mode, setMode] = useState('focus')
-  const [isRunning, setIsRunning] = useState(false)
+  const [preset,       setPresetState]  = useState('25/5')
+  const [customFocus,  setCustomFocus]  = useState(25)
+  const [customBreak,  setCustomBreak]  = useState(5)
+  const [mode,         setMode]         = useState('focus')
+  const [isRunning,    setIsRunning]    = useState(false)
   const [sessionCount, setSessionCount] = useState(0)
-  const [autoStart, setAutoStart] = useState(false)
+  const [autoStart,    setAutoStart]    = useState(false)
 
   const onSessionCompleteRef = useRef(onSessionComplete)
   useEffect(() => {
     onSessionCompleteRef.current = onSessionComplete
   }, [onSessionComplete])
 
-  // Derive durations from current preset
+  // ── Derive durations from current preset ─────────────────────────────────
   const getDurations = useCallback(() => {
     if (preset === 'custom') {
-      return {
-        focus: customFocus * 60,
-        shortBreak: customBreak * 60,
-      }
+      return { focus: customFocus * 60, shortBreak: customBreak * 60 }
     }
     return PRESETS[preset]
   }, [preset, customFocus, customBreak])
 
   const getDurationForMode = useCallback((m) => {
     const durations = getDurations()
-    if (m === 'focus') return durations.focus
+    if (m === 'focus')      return durations.focus
     if (m === 'shortBreak') return durations.shortBreak
     return LONG_BREAK
   }, [getDurations])
 
   const [timeLeft, setTimeLeft] = useState(() => getDurationForMode('focus'))
 
-  // Tick interval
+  // ── RESTORE FROM LOCALSTORAGE ON MOUNT ──────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return
+
+    try {
+      const parsed = JSON.parse(saved)
+      const now    = Date.now()
+
+      if (parsed.isRunning && parsed.savedAt) {
+        // Timer was running when they left — calculate elapsed time
+        const elapsed   = Math.floor((now - parsed.savedAt) / 1000)
+        const remaining = parsed.timeLeft - elapsed
+
+        if (remaining > 0) {
+          setTimeLeft(remaining)
+          setMode(parsed.mode        || 'focus')
+          setSessionCount(parsed.sessionCount ?? 0)
+          if (parsed.preset) setPresetState(parsed.preset)
+          setIsRunning(true)   // auto-resume
+        } else {
+          // Session finished while away — clear and start fresh
+          clearState()
+        }
+      } else {
+        // Timer was paused — restore paused state exactly
+        setTimeLeft(parsed.timeLeft)
+        setMode(parsed.mode          || 'focus')
+        setSessionCount(parsed.sessionCount ?? 0)
+        if (parsed.preset) setPresetState(parsed.preset)
+        setIsRunning(false)
+      }
+    } catch {
+      clearState()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── TICK INTERVAL — saves to localStorage every second ───────────────────
   useEffect(() => {
     if (!isRunning) return
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        const next = prev - 1
+
+        // Persist on every tick so refresh always has current time
+        saveState({ timeLeft: next, mode, sessionCount, preset, isRunning: true })
+
+        if (next <= 0) {
           clearInterval(interval)
           return 0
         }
-        return prev - 1
+        return next
       })
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [isRunning])
+  }, [isRunning, mode, sessionCount, preset])
 
-  // Handle timeLeft reaching 0
+  // ── HANDLE timeLeft REACHING 0 ───────────────────────────────────────────
   useEffect(() => {
     if (timeLeft !== 0) return
-    if (!isRunning) return
+    if (!isRunning)     return
 
     setIsRunning(false)
+    clearState()   // clear saved state on session complete
     playBell()
 
     if (mode === 'focus') {
-      // Compute focus duration in minutes for the callback
-      const durations = getDurations()
-      const focusMinutes = Math.round(durations.focus / 60)
+      const durations     = getDurations()
+      const focusMinutes  = Math.round(durations.focus / 60)
 
       if (onSessionCompleteRef.current) {
         onSessionCompleteRef.current(focusMinutes)
@@ -108,7 +158,6 @@ export function useTimer({ onSessionComplete } = {}) {
       const newCount = sessionCount + 1
       setSessionCount(newCount)
 
-      // Determine next mode
       if (newCount % 4 === 0) {
         setMode('longBreak')
         setTimeLeft(LONG_BREAK)
@@ -117,33 +166,38 @@ export function useTimer({ onSessionComplete } = {}) {
         setTimeLeft(getDurationForMode('shortBreak'))
       }
 
-      if (autoStart) {
-        setIsRunning(true)
-      }
+      if (autoStart) setIsRunning(true)
     } else {
       // Break ended → back to focus
       setMode('focus')
       setTimeLeft(getDurationForMode('focus'))
-
-      if (autoStart) {
-        setIsRunning(true)
-      }
+      if (autoStart) setIsRunning(true)
     }
   }, [timeLeft, isRunning, mode, sessionCount, autoStart, getDurations, getDurationForMode])
 
+  // ── ACTIONS ───────────────────────────────────────────────────────────────
   const start = useCallback(() => setIsRunning(true), [])
-  const pause = useCallback(() => setIsRunning(false), [])
+
+  const pause = useCallback(() => {
+    setIsRunning(false)
+    // Capture current timeLeft via functional update to avoid stale closure
+    setTimeLeft((tl) => {
+      saveState({ timeLeft: tl, mode, sessionCount, preset, isRunning: false })
+      return tl
+    })
+  }, [mode, sessionCount, preset])
 
   const reset = useCallback(() => {
+    clearState()
     setIsRunning(false)
     setTimeLeft(getDurationForMode(mode))
   }, [getDurationForMode, mode])
 
   const skip = useCallback(() => {
     setIsRunning(false)
+    clearState()
 
     if (mode === 'focus') {
-      // Skip focus → go to break (don't count as completed session)
       const nextCount = sessionCount
       if (nextCount % 4 === 0 && nextCount > 0) {
         setMode('longBreak')
@@ -153,7 +207,6 @@ export function useTimer({ onSessionComplete } = {}) {
         setTimeLeft(getDurationForMode('shortBreak'))
       }
     } else {
-      // Skip break → go to focus
       setMode('focus')
       setTimeLeft(getDurationForMode('focus'))
     }
@@ -164,6 +217,7 @@ export function useTimer({ onSessionComplete } = {}) {
     setIsRunning(false)
     setMode('focus')
     setSessionCount(0)
+    clearState()
 
     if (p === 'custom') {
       setTimeLeft(customFocus * 60)
@@ -179,6 +233,7 @@ export function useTimer({ onSessionComplete } = {}) {
       setIsRunning(false)
       setMode('focus')
       setTimeLeft(focusMin * 60)
+      clearState()
     }
   }, [preset])
 

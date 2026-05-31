@@ -1,71 +1,91 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import SimplePeer from 'simple-peer'
 import { supabase } from '../lib/supabase'
 
 const CHANNEL_NAME = 'studywatch-signal'
 
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+  ],
+}
+
 /**
  * Shared WebRTC + signaling hook.
  *
- * @param {object} opts
- * @param {boolean} opts.enabled        — whether to subscribe at all
- * @param {boolean} opts.isInitiator    — true = her side, false = viewer side
- * @param {string}  opts.presenceKey    — 'host' | 'viewer'
+ * @param {object}   opts
+ * @param {boolean}  opts.enabled       — whether to subscribe at all
+ * @param {boolean}  opts.isInitiator   — true = her side, false = viewer side
+ * @param {string}   opts.presenceKey   — 'host' | 'viewer'
  * @param {function} opts.onChat        — called when remote chat msg arrives
  */
 export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
-  const [localStream, setLocalStream]   = useState(null)
-  const [remoteStream, setRemoteStream] = useState(null)
-  const [permissionError, setPermissionError] = useState(false)
-  const [peerConnected, setPeerConnected]     = useState(false)
-  const [viewerPresent, setViewerPresent]     = useState(false)  // only used on host side
+  const [localStream,   setLocalStream]   = useState(null)
+  const [remoteStream,  setRemoteStream]  = useState(null)
+  // 'idle' | 'pending' | 'granted' | 'denied'
+  const [cameraStatus,  setCameraStatus]  = useState('idle')
+  const [peerConnected, setPeerConnected] = useState(false)
+  const [viewerPresent, setViewerPresent] = useState(false)
 
   const peerRef    = useRef(null)
   const channelRef = useRef(null)
-  const streamRef  = useRef(null)   // keep latest localStream for startPeer closure
+  const streamRef  = useRef(null)
 
-  // ── Camera ──────────────────────────────────────────────────────────────
+  // ── Camera ───────────────────────────────────────────────────────────────
   const getCameraPermission = useCallback(async () => {
+    setCameraStatus('pending')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      })
       streamRef.current = stream
       setLocalStream(stream)
+      setCameraStatus('granted')
       return stream
     } catch {
-      setPermissionError(true)
+      setCameraStatus('denied')
       return null
     }
   }, [])
 
-  // ── Peer lifecycle ───────────────────────────────────────────────────────
-  const startPeer = useCallback((stream) => {
-    if (peerRef.current) return        // already running
-    if (!channelRef.current) return    // channel not ready
+  // ── Peer lifecycle ────────────────────────────────────────────────────────
+  const startPeer = useCallback(
+    (stream) => {
+      if (peerRef.current) return      // already running
+      if (!channelRef.current) return  // channel not ready yet
 
-    const peer = new SimplePeer({
-      initiator: isInitiator,
-      stream: stream || streamRef.current,
-      trickle: true,
-    })
+      // Lazy-load simple-peer to avoid SSR / polyfill issues
+      import('simple-peer').then(({ default: SimplePeer }) => {
+        const peer = new SimplePeer({
+          initiator: isInitiator,
+          stream: stream || streamRef.current,
+          trickle: false,             // wait for full ICE gathering before sending
+          config: ICE_SERVERS,
+        })
 
-    peer.on('signal', (data) => {
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: data,
+        peer.on('signal', (data) => {
+          channelRef.current?.send({
+            type: 'broadcast',
+            event: 'signal',
+            payload: data,
+          })
+        })
+
+        peer.on('stream', (remote) => {
+          setRemoteStream(remote)
+        })
+
+        peer.on('connect', () => setPeerConnected(true))
+        peer.on('close',   () => { setPeerConnected(false); peerRef.current = null })
+        peer.on('error',   (e) => console.error('[WebRTC] peer error', e))
+
+        peerRef.current = peer
       })
-    })
-
-    peer.on('stream', (remote) => {
-      setRemoteStream(remote)
-    })
-
-    peer.on('connect', () => setPeerConnected(true))
-    peer.on('close',   () => { setPeerConnected(false); peerRef.current = null })
-    peer.on('error',   (e) => console.error('[WebRTC] peer error', e))
-
-    peerRef.current = peer
-  }, [isInitiator])
+    },
+    [isInitiator],
+  )
 
   const destroyPeer = useCallback(() => {
     peerRef.current?.destroy()
@@ -79,9 +99,10 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
     setLocalStream(null)
+    setCameraStatus('idle')
   }, [])
 
-  // ── Supabase Realtime channel ────────────────────────────────────────────
+  // ── Supabase Realtime channel ─────────────────────────────────────────────
   useEffect(() => {
     if (!enabled) return
 
@@ -94,7 +115,7 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
 
     channelRef.current = channel
 
-    // WebRTC signaling
+    // WebRTC signaling — relay signals to peer
     channel.on('broadcast', { event: 'signal' }, ({ payload }) => {
       if (peerRef.current) {
         peerRef.current.signal(payload)
@@ -106,12 +127,12 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
       onChat?.(payload)
     })
 
-    // Presence (host side watches for viewer)
+    // Presence tracking — host side watches for viewer joining
     if (isInitiator) {
       channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
         const hasViewer = Object.values(state).some((presences) =>
-          presences.some((p) => p.role === 'viewer')
+          presences.some((p) => p.role === 'viewer'),
         )
         setViewerPresent(hasViewer)
       })
@@ -129,7 +150,7 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
     }
   }, [enabled, isInitiator, presenceKey, onChat])
 
-  // ── Auto-start peer on host side when viewer joins ───────────────────────
+  // ── Host side: start peer when viewer joins AND camera is ready ───────────
   useEffect(() => {
     if (!isInitiator) return
 
@@ -144,9 +165,9 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
     }
   }, [viewerPresent, localStream, isInitiator, startPeer])
 
-  // ── Send chat message ────────────────────────────────────────────────────
+  // ── Chat ─────────────────────────────────────────────────────────────────
   const sendChat = useCallback((text, sender) => {
-    if (!channelRef.current || !text.trim()) return
+    if (!channelRef.current || !text.trim()) return null
     const payload = { text: text.trim(), sender, ts: Date.now() }
     channelRef.current.send({ type: 'broadcast', event: 'chat', payload })
     return payload
@@ -155,7 +176,7 @@ export function useWebRTC({ enabled, isInitiator, presenceKey, onChat }) {
   return {
     localStream,
     remoteStream,
-    permissionError,
+    cameraStatus,
     peerConnected,
     viewerPresent,
     getCameraPermission,
