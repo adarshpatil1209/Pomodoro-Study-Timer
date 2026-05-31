@@ -19,9 +19,10 @@ function parseWeeklyData(data) {
 }
 
 function formatHours(totalMinutes) {
-  const h = Math.floor((totalMinutes || 0) / 60)
-  const m = (totalMinutes || 0) % 60
-  return `${h}h ${m}m`
+  const totalMins = totalMinutes || 0
+  const hours = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
 }
 
 function MetricCard({ emoji, value, label, children }) {
@@ -38,21 +39,34 @@ function MetricCard({ emoji, value, label, children }) {
 }
 
 function WeeklyChart({ weeklyData }) {
-  const data = parseWeeklyData(weeklyData)
+  const rawWeekly = weeklyData
+  const data = Array.isArray(rawWeekly)
+    ? rawWeekly
+    : (() => {
+        try { return JSON.parse(rawWeekly || '[0,0,0,0,0,0,0]') }
+        catch { return [0,0,0,0,0,0,0] }
+      })()
+
   const maxVal = Math.max(...data, 1)
-  const todayIndex = getDayIndex()
+  const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
 
   return (
     <div className="stats-chart-bars">
       {data.map((val, i) => {
-        const heightPct = Math.max((val / maxVal) * 100, 3)
+        const heightPct = Math.max((val / maxVal) * 100, 4)
         const isToday = i === todayIndex
 
         return (
           <div className="stats-chart-col" key={i}>
-            <div className="stats-chart-bar-track">
+            <div className="stats-chart-bar-track" style={{ overflow: 'visible' }}>
+              {val > 0 && (
+                <span style={{ fontFamily: '"DM Mono", monospace', fontWeight: 300, fontSize: '10px', color: '#9A7A6A', marginBottom: '4px' }}>
+                  {val}
+                </span>
+              )}
               <motion.div
                 className={`stats-chart-bar-fill ${isToday ? 'stats-chart-bar-fill--today' : ''}`}
+                style={{ backgroundColor: isToday ? '#EDE0D4' : '#C8B89A' }}
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPct}%` }}
                 transition={{ type: 'spring', stiffness: 200, damping: 20, delay: i * 0.04 }}
@@ -71,14 +85,11 @@ function WeeklyChart({ weeklyData }) {
 export default function Stats({ stats, updateStats }) {
   if (!stats) return null
 
-  const totalSessions = stats.total_sessions || 0
-  const totalMinutes = stats.total_minutes || 0
-  const streakDays = stats.streak_days || 0
-  const sessionsToday = stats.sessions_today || 0
-  const dailyGoal = stats.daily_goal || 8
-  const goalHit = sessionsToday >= dailyGoal
-
-
+  const neetDate = new Date('2026-06-21')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  neetDate.setHours(0, 0, 0, 0)
+  const daysLeft = Math.ceil((neetDate - today) / (1000 * 60 * 60 * 24))
 
   return (
     <div className="stats-section">
@@ -92,7 +103,7 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.3 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="🍅" value={totalSessions} label="Sessions Total" />
+          <MetricCard emoji="🍅" value={stats?.total_sessions || 0} label="Sessions Total" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -100,7 +111,7 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.38 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="⏱" value={formatHours(totalMinutes)} label="Total Hours" />
+          <MetricCard emoji="⏱" value={formatHours(stats?.total_minutes || 0)} label="Total Hours" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -108,25 +119,30 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.46 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="🔥" value={streakDays} label="Day Streak">
-            <span className="stats-streak-badge">{streakDays}d streak</span>
-          </MetricCard>
-        </motion.div>
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.54 }}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
-          <MetricCard
-            emoji="🎯"
-            value={`${sessionsToday}/${dailyGoal}`}
-            label="Today"
-          >
-            {goalHit && <span className="stats-goal-hit">🎉 Goal hit!</span>}
+          <MetricCard emoji="🔥" value={stats?.streak_days || 0} label="Day Streak">
+            {stats?.streak_days > 0 && <span className="stats-streak-badge">{stats?.streak_days}d streak</span>}
           </MetricCard>
         </motion.div>
       </div>
+
+      {/* Row 2 — NEET countdown */}
+      <motion.div
+        className="stats-metric-card card"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.54 }}
+        whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        style={{ padding: '24px', gridColumn: '1 / -1', marginBottom: '16px' }}
+      >
+        <span className="font-mono" style={{ 
+          fontSize: '28px', 
+          fontWeight: 300, 
+          color: daysLeft > 30 ? '#F5EFE6' : daysLeft > 10 ? '#D4893A' : '#B03030'
+        }}>
+          {daysLeft <= 0 ? 'NEET Day! 🩺🎉' : daysLeft}
+        </span>
+        {daysLeft > 0 && <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#9A7A6A', marginTop: '4px' }}>days to NEET 🩺</span>}
+      </motion.div>
 
       {/* Row 2 — Weekly chart */}
       <div className="stats-chart-card card">
