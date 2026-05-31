@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { Analytics } from '@vercel/analytics/react'
 import { useTimer } from './hooks/useTimer'
 import { useStats } from './hooks/useStats'
 import { useTodos } from './hooks/useTodos'
@@ -338,6 +339,9 @@ export default function App() {
 
       {/* Decorative hibiscus */}
       <HibiscusSVG />
+      
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   )
 }
