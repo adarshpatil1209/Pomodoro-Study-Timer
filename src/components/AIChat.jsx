@@ -115,7 +115,7 @@ export default function AIChat() {
         whileTap={{ scale: 0.96 }}
         style={{
           position: 'fixed',
-          bottom: 120,
+          bottom: 170,
           left: 20,
           zIndex: 100,
           background: '#6B0A14',
@@ -144,7 +144,7 @@ export default function AIChat() {
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
               position: 'fixed',
-              bottom: 170,
+              bottom: 220,
               left: 20,
               width: '320px',
               maxHeight: '480px',
