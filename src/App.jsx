@@ -16,6 +16,7 @@ import { Routes, Route } from 'react-router-dom'
 import StudyCamera, { StudyCameraToggle } from './components/StudyCamera'
 import WatchPage from './pages/WatchPage'
 import ChatWidget from './components/ChatWidget'
+import AIChat from './components/AIChat'
 import './App.css'
 
 function HibiscusSVG() {
@@ -319,6 +320,7 @@ function MainApp() {
       {/* Fixed elements */}
       <MusicPlayer />
       <ChatWidget />
+      <AIChat />
 
       <StudyCamera isOpen={cameraOpen} onClose={() => setCameraOpen(false)} />
 
