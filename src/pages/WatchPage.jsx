@@ -16,6 +16,7 @@ export default function WatchPage() {
   const [snapStream, setSnapStream] = useState(null)
   const [incomingSnap, setIncomingSnap] = useState(null)
   const [snapVisible, setSnapVisible] = useState(false)
+  const [snapExpanded, setSnapExpanded] = useState(false)
 
   // Refs
   const chatChannelRef = useRef(null)
@@ -132,6 +133,7 @@ export default function WatchPage() {
     const handleKey = (e) => {
       if (e.key === 'Escape') {
         setSnapVisible(false)
+        setSnapExpanded(false)
         setIncomingSnap(null)
       }
     }
@@ -198,6 +200,7 @@ export default function WatchPage() {
 
   const dismissIncoming = () => {
     setSnapVisible(false)
+    setSnapExpanded(false)
     setIncomingSnap(null)
   }
 
@@ -497,9 +500,9 @@ export default function WatchPage() {
         )}
       </AnimatePresence>
 
-      {/* Incoming snap — floating card bottom-right */}
+      {/* Incoming snap — small floating card bottom-right */}
       <AnimatePresence>
-        {snapVisible && incomingSnap && (
+        {snapVisible && incomingSnap && !snapExpanded && (
           <motion.div
             initial={{ x: 60, opacity: 0, scale: 0.9 }}
             animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -513,7 +516,7 @@ export default function WatchPage() {
               cursor: 'pointer',
               width: '200px',
             }}
-            onClick={dismissIncoming}
+            onClick={() => setSnapExpanded(true)}
           >
             <div style={{ position: 'relative' }}>
               <img
@@ -551,7 +554,6 @@ export default function WatchPage() {
                   justifyContent: 'center'
                 }}
               >✕</button>
-              {/* Tap to close hint */}
               <div style={{
                 textAlign: 'center',
                 marginTop: '6px',
@@ -560,9 +562,47 @@ export default function WatchPage() {
                 fontSize: '12px',
                 color: '#9A7A6A'
               }}>
-                tap to close
+                tap to expand
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Incoming snap — expanded full view */}
+      <AnimatePresence>
+        {snapVisible && incomingSnap && snapExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={dismissIncoming}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(20,2,4,0.92)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <motion.img
+              src={incomingSnap.image}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              style={{
+                width: '340px', maxWidth: '90vw', borderRadius: '20px',
+                border: '1px solid rgba(255,255,255,0.10)'
+              }}
+            />
+            <span style={{
+              marginTop: '16px',
+              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+              fontSize: '14px', color: '#9A7A6A'
+            }}>
+              tap anywhere to close
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
