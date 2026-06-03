@@ -2,52 +2,53 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
-const CHANNEL_NAME = 'studywatch-v2'
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-}
-
 export default function WatchPage() {
   // All state
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
-  const [herStream, setHerStream] = useState(null)
-  const [viewerStream, setViewerStream] = useState(null)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
-  const [connectionStatus, setConnectionStatus] = useState('waiting')
-  const [isConnecting, setIsConnecting] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Snap state
+  const [snapPreviewOpen, setSnapPreviewOpen] = useState(false)
+  const [snapStream, setSnapStream] = useState(null)
+  const [incomingSnap, setIncomingSnap] = useState(null)
+  const [snapVisible, setSnapVisible] = useState(false)
 
   // Refs
-  const herVideoRef = useRef(null)
-  const myVideoRef = useRef(null)
-  const pcRef = useRef(null)
-  const channelRef = useRef(null)
   const chatChannelRef = useRef(null)
-  const viewerStreamRef = useRef(null)
-  const iceCandidateBuffer = useRef([])
-  const remoteDescSet = useRef(false)
+  const snapChannelRef = useRef(null)
+  const snapVideoRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const originalTitle = useRef(document.title)
+  const notifInterval = useRef(null)
+
+  const showTabNotification = (count) => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    let show = true
+    notifInterval.current = setInterval(() => {
+      document.title = show
+        ? `(${count}) New message 💬`
+        : originalTitle.current
+      show = !show
+    }, 1000)
+  }
+
+  const clearTabNotification = () => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    document.title = originalTitle.current
+  }
+
+  useEffect(() => {
+    const handleFocus = () => {
+      setUnreadCount(0)
+      clearTabNotification()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
 
   // Track responsive screen width
   useEffect(() => {
@@ -79,195 +80,64 @@ export default function WatchPage() {
     }
   }, [])
 
-  // Initialize watch connections when authenticated
+  // Initialize chat + snap channels when authenticated
   useEffect(() => {
-    if (authed) {
-      initWatch()
+    if (!authed) return
 
-      const chatChannel = supabase.channel('study-chat', {
-        config: { broadcast: { self: false } }
-      })
-      chatChannelRef.current = chatChannel
-      
-      chatChannel.on('broadcast', { event: 'chat' }, ({ payload }) => {
-        if (payload.from === 'her') {
-          const msg = { ...payload, id: Date.now() + Math.random() }
-          setMessages(prev => [...prev.slice(-20), msg])
+    // Chat channel
+    const chatChannel = supabase.channel('study-chat', {
+      config: { broadcast: { self: false } }
+    })
+    chatChannelRef.current = chatChannel
+
+    chatChannel.on('broadcast', { event: 'chat' }, ({ payload }) => {
+      if (payload.from === 'her') {
+        const msg = { ...payload, id: Date.now() + Math.random() }
+        setMessages(prev => [...prev.slice(-20), msg])
+
+        if (document.hidden) {
+          setUnreadCount(prev => {
+            const newCount = prev + 1
+            showTabNotification(newCount)
+            return newCount
+          })
         }
-      })
-      chatChannel.subscribe()
+      }
+    })
+    chatChannel.subscribe()
+
+    // Snap channel
+    const snapChannel = supabase.channel('instant-snap', {
+      config: { broadcast: { self: false } }
+    })
+    snapChannelRef.current = snapChannel
+
+    snapChannel.on('broadcast', { event: 'snap' }, ({ payload }) => {
+      if (payload.from === 'her') {
+        setIncomingSnap(payload)
+        setSnapVisible(true)
+      }
+    })
+    snapChannel.subscribe()
+
+    return () => {
+      chatChannel.unsubscribe()
+      snapChannel.unsubscribe()
     }
   }, [authed])
 
-  // Cleanup on unmount
+  // Dismiss incoming snap on Escape
   useEffect(() => {
-    return () => {
-      channelRef.current?.send({
-        type: 'broadcast', event: 'viewer-left', payload: {}
-      })
-      viewerStreamRef.current?.getTracks().forEach(t => t.stop())
-      if (pcRef.current) {
-        pcRef.current.close()
-        pcRef.current = null
-      }
-      channelRef.current?.unsubscribe()
-      chatChannelRef.current?.unsubscribe()
-    }
-  }, [])
-
-  const initWatch = async () => {
-    setIsConnecting(true)
-
-    // Start own camera
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, facingMode: 'user' },
-        audio: false
-      })
-      viewerStreamRef.current = stream
-      setViewerStream(stream)
-    } catch (e) {
-      console.error('Viewer camera error:', e)
-    }
-
-    // Setup channel
-    const channel = supabase.channel(CHANNEL_NAME, {
-      config: { broadcast: { self: false }, presence: { key: 'viewer' } }
-    })
-    channelRef.current = channel
-
-    // Receive offer from her
-    channel.on('broadcast', { event: 'offer' }, async ({ payload }) => {
-      console.log('VIEWER: received offer, type:', payload.sdp?.type)
-      
-      // Validate offer before processing
-      if (!payload.sdp || !payload.sdp.type) {
-        console.error('VIEWER: invalid offer received, ignoring')
-        return
-      }
-      
-      // Always create fresh peer connection for each offer
-      if (pcRef.current) {
-        pcRef.current.close()
-        pcRef.current = null
-      }
-      remoteDescSet.current = false
-      iceCandidateBuffer.current = []
-      
-      await createPeerConnection()
-      const pc = pcRef.current
-      
-      try {
-        await pc.setRemoteDescription(
-          new RTCSessionDescription(payload.sdp)
-        )
-        remoteDescSet.current = true
-        console.log('VIEWER: remote description set successfully')
-        
-        // flush buffered ICE
-        for (const c of iceCandidateBuffer.current) {
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(c))
-          } catch (e) {
-            console.error('VIEWER: ICE flush error', e)
-          }
-        }
-        iceCandidateBuffer.current = []
-        
-        const answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
-        
-        channelRef.current.send({
-          type: 'broadcast',
-          event: 'answer',
-          payload: { sdp: answer }
-        })
-        console.log('VIEWER: answer sent, type:', answer.type)
-        
-      } catch (e) {
-        console.error('VIEWER: offer handling failed', e)
-      }
-    })
-
-    // Receive ICE from her
-    channel.on('broadcast', { event: 'ice-her' }, async ({ payload }) => {
-      if (!payload.candidate) return
-      if (remoteDescSet.current && pcRef.current) {
-        try {
-          await pcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate))
-        } catch (e) { console.error('VIEWER: ICE error', e) }
-      } else {
-        iceCandidateBuffer.current.push(payload.candidate)
-      }
-    })
-
-    channel.subscribe(async (status) => {
-      console.log('VIEWER channel:', status)
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ role: 'viewer' })
-        
-        // Wait 1.5s then send viewer-ready
-        setTimeout(() => {
-          channel.send({
-            type: 'broadcast',
-            event: 'viewer-ready',
-            payload: {}
-          })
-          console.log('VIEWER: sent viewer-ready')
-          setIsConnecting(false)
-        }, 1500)
-      }
-    })
-  }
-
-  const createPeerConnection = async () => {
-    if (pcRef.current) pcRef.current.close()
-    remoteDescSet.current = false
-    iceCandidateBuffer.current = []
-
-    const pc = new RTCPeerConnection(ICE_SERVERS)
-    pcRef.current = pc
-
-    if (viewerStreamRef.current) {
-      viewerStreamRef.current.getTracks().forEach(t => 
-        pc.addTrack(t, viewerStreamRef.current)
-      )
-    }
-
-    pc.ontrack = (event) => {
-      console.log('VIEWER: got her stream!')
-      const stream = event.streams[0]
-      setHerStream(stream)
-      setConnectionStatus('connected')
-      
-      setTimeout(() => {
-        if (herVideoRef.current) {
-          herVideoRef.current.srcObject = stream
-          herVideoRef.current.play()
-            .then(() => console.log('VIEWER: her video playing'))
-            .catch(e => console.error('VIEWER: play error', e))
-        }
-      }, 100)
-    }
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        channelRef.current.send({
-          type: 'broadcast', event: 'ice-viewer',
-          payload: { candidate: event.candidate }
-        })
+    if (!snapVisible) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') {
+        setSnapVisible(false)
+        setIncomingSnap(null)
       }
     }
-
-    pc.onconnectionstatechange = () => {
-      console.log('VIEWER connection:', pc.connectionState)
-      if (pc.connectionState === 'connected') setConnectionStatus('connected')
-      if (pc.connectionState === 'failed') setConnectionStatus('failed')
-      if (pc.connectionState === 'disconnected') setConnectionStatus('disconnected')
-    }
-
-    return pc
-  }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [snapVisible])
 
   const sendMessage = () => {
     if (!chatInput.trim()) return
@@ -279,32 +149,57 @@ export default function WatchPage() {
     setChatInput('')
   }
 
-  const reconnect = () => {
-    if (pcRef.current) { pcRef.current.close(); pcRef.current = null }
-    iceCandidateBuffer.current = []
-    remoteDescSet.current = false
-    setConnectionStatus('waiting')
-    setHerStream(null)
-    setTimeout(() => {
-      channelRef.current?.send({
-        type: 'broadcast', event: 'viewer-ready', payload: {}
+  const takeSnap = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 400, height: 300 },
+        audio: false
       })
-      console.log('VIEWER: reconnect sent')
-    }, 500)
+      setSnapStream(stream)
+      setSnapPreviewOpen(true)
+      setTimeout(() => {
+        if (snapVideoRef.current) {
+          snapVideoRef.current.srcObject = stream
+        }
+      }, 100)
+    } catch (err) {
+      alert('Allow camera permission to snap')
+    }
   }
 
-  // Bind media stream source objects safely to UI once DOM elements mount
-  useEffect(() => {
-    if (herStream && herVideoRef.current) {
-      herVideoRef.current.srcObject = herStream
-    }
-  }, [herStream])
+  const sendSnap = () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 400
+    canvas.height = 300
+    const ctx = canvas.getContext('2d')
+    ctx.translate(400, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(snapVideoRef.current, 0, 0, 400, 300)
+    const base64 = canvas.toDataURL('image/jpeg', 0.7)
 
-  useEffect(() => {
-    if (viewerStream && myVideoRef.current) {
-      myVideoRef.current.srcObject = viewerStream
+    snapStream.getTracks().forEach(t => t.stop())
+    setSnapStream(null)
+    setSnapPreviewOpen(false)
+
+    snapChannelRef.current.send({
+      type: 'broadcast',
+      event: 'snap',
+      payload: { image: base64, from: 'viewer', id: Date.now() }
+    })
+  }
+
+  const cancelSnap = () => {
+    if (snapStream) {
+      snapStream.getTracks().forEach(t => t.stop())
     }
-  }, [viewerStream])
+    setSnapStream(null)
+    setSnapPreviewOpen(false)
+  }
+
+  const dismissIncoming = () => {
+    setSnapVisible(false)
+    setIncomingSnap(null)
+  }
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault()
@@ -381,40 +276,6 @@ export default function WatchPage() {
   // ── MAIN WATCH UI ────────────────────────────────────────────
   // ══════════════════════════════════════════════════════════════
 
-  const getStatusPill = () => {
-    if (connectionStatus === 'connected') {
-      return (
-        <div style={{
-          background: 'rgba(125,170,150,0.15)', color: '#7DAA96',
-          borderRadius: '999px', padding: '6px 14px', fontSize: '12px',
-          fontWeight: 600, fontFamily: 'DM Sans'
-        }}>
-          ● Live
-        </div>
-      )
-    }
-    if (connectionStatus === 'failed') {
-      return (
-        <div style={{
-          background: 'rgba(176,48,48,0.15)', color: '#B03030',
-          borderRadius: '999px', padding: '6px 14px', fontSize: '12px',
-          fontWeight: 600, fontFamily: 'DM Sans'
-        }}>
-          ● Failed
-        </div>
-      )
-    }
-    return (
-      <div style={{
-        background: 'rgba(212,137,58,0.15)', color: '#D4893A',
-        borderRadius: '999px', padding: '6px 14px', fontSize: '12px',
-        fontWeight: 600, fontFamily: 'DM Sans'
-      }}>
-        ● Waiting
-      </div>
-    )
-  }
-
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', minHeight: '100vh',
@@ -429,7 +290,6 @@ export default function WatchPage() {
           fontFamily: 'Cormorant Garamond, serif', fontWeight: 700,
           fontSize: '24px', color: '#C8B89A', margin: 0
         }}>DR.SURU 🩺</h1>
-        {getStatusPill()}
       </div>
 
       {/* Main Grid Layout */}
@@ -439,53 +299,25 @@ export default function WatchPage() {
         gap: '20px',
         alignItems: 'start'
       }}>
-        {/* LEFT — Her video (large) */}
+        {/* LEFT — Snap placeholder */}
         <div style={{
           background: '#6B0A14', borderRadius: '24px',
           border: '1px solid rgba(255,255,255,0.10)',
           overflow: 'hidden', position: 'relative', display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          aspectRatio: '4/3'
         }}>
-          {herStream ? (
-            <video
-              ref={herVideoRef}
-              autoPlay
-              playsInline
-              muted={false}
-              style={{
-                width: '100%',
-                borderRadius: '24px',
-                background: '#3D0408',
-                objectFit: 'cover',
-                aspectRatio: '4/3',
-                display: 'block'
-              }}
-            />
-          ) : (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              aspectRatio: '4/3', width: '100%'
-            }}>
-              <motion.div
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
-                  fontSize: '18px', color: '#9A7A6A'
-                }}
-              >
-                Waiting for her camera... 🌸
-              </motion.div>
-            </div>
-          )}
-          <span style={{
-            position: 'absolute', bottom: '16px', left: '16px',
-            fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
-            fontSize: '14px', color: '#F5EFE6', background: 'rgba(0,0,0,0.4)',
-            borderRadius: '999px', padding: '4px 10px'
-          }}>
-            her 🌸
-          </span>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+              fontSize: '18px', color: '#9A7A6A', textAlign: 'center',
+              padding: '20px'
+            }}
+          >
+            Send a snap to see each other 📷
+          </motion.div>
         </div>
 
         {/* RIGHT — Controls Panel */}
@@ -494,29 +326,6 @@ export default function WatchPage() {
           border: '1px solid rgba(255,255,255,0.10)', display: 'flex',
           flexDirection: 'column', gap: '16px'
         }}>
-          {/* My Video */}
-          <div style={{
-            position: 'relative', borderRadius: '14px',
-            overflow: 'hidden', aspectRatio: '4/3'
-          }}>
-            <video
-              ref={myVideoRef}
-              autoPlay playsInline muted
-              style={{
-                width: '100%', height: '100%', objectFit: 'cover',
-                transform: 'scaleX(-1)', display: 'block', background: '#3D0408'
-              }}
-            />
-            <span style={{
-              position: 'absolute', bottom: '12px', left: '12px',
-              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
-              fontSize: '12px', color: '#F5EFE6', background: 'rgba(0,0,0,0.4)',
-              borderRadius: '999px', padding: '3px 8px'
-            }}>
-              you
-            </span>
-          </div>
-
           {/* Section Divider */}
           <div style={{
             borderBottom: '1px solid rgba(255, 255, 255, 0.10)',
@@ -603,10 +412,10 @@ export default function WatchPage() {
             </button>
           </div>
 
-          {/* Reconnect button */}
+          {/* Snap her button */}
           <motion.button
-            onClick={reconnect}
-            whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+            onClick={takeSnap}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             style={{
               width: '100%', background: 'transparent', color: '#C8B89A',
@@ -615,10 +424,132 @@ export default function WatchPage() {
               cursor: 'pointer'
             }}
           >
-            🔄 Reconnect
+            📷 Snap her
           </motion.button>
         </div>
       </div>
+
+      {/* Snap preview modal */}
+      <AnimatePresence>
+        {snapPreviewOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(20,2,4,0.90)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center'
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={cancelSnap}
+              style={{
+                position: 'absolute', top: 20, right: 20,
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#F5EFE6', fontSize: '14px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >✕</button>
+
+            {/* Video preview */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              <video
+                ref={snapVideoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  width: '300px', height: '225px',
+                  borderRadius: '20px', objectFit: 'cover',
+                  transform: 'scaleX(-1)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: '#3D0408'
+                }}
+              />
+            </motion.div>
+
+            {/* Send button */}
+            <motion.button
+              onClick={sendSnap}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                marginTop: '20px',
+                background: '#C8B89A', color: '#6B0A14',
+                border: 'none', borderRadius: '999px',
+                padding: '10px 28px', fontFamily: 'DM Sans',
+                fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+              }}
+            >
+              📸 Send
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Incoming snap — floating card bottom-right */}
+      <AnimatePresence>
+        {snapVisible && incomingSnap && (
+          <motion.div
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 60, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{
+              position: 'fixed', bottom: 20, right: 20, zIndex: 999,
+              display: 'flex', flexDirection: 'column', alignItems: 'center'
+            }}
+          >
+            <div
+              onClick={dismissIncoming}
+              style={{
+                width: '200px', height: '150px',
+                borderRadius: '20px', overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.12)',
+                cursor: 'pointer', position: 'relative'
+              }}
+            >
+              <img
+                src={incomingSnap.image}
+                alt="Snap"
+                style={{
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
+              {/* Close button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); dismissIncoming() }}
+                style={{
+                  position: 'absolute', top: 6, right: 6,
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.5)',
+                  border: 'none', color: 'white', fontSize: '10px',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center'
+                }}
+              >✕</button>
+            </div>
+            <span style={{
+              marginTop: '6px',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '11px',
+              color: '#9A7A6A', textAlign: 'center'
+            }}>
+              tap to close
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -8,14 +8,16 @@ function getDayIndex() {
   return day === 0 ? 6 : day - 1
 }
 
-function parseWeeklyData(data) {
-  if (!data) return [0, 0, 0, 0, 0, 0, 0]
-  try {
-    const parsed = typeof data === 'string' ? JSON.parse(data) : data
-    return Array.isArray(parsed) ? parsed.map(Number) : [0, 0, 0, 0, 0, 0, 0]
-  } catch {
-    return [0, 0, 0, 0, 0, 0, 0]
+const parseWeekly = (raw) => {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) }
+    catch { return [0,0,0,0,0,0,0] }
   }
+  if (raw && typeof raw === 'object') {
+    return Object.values(raw)
+  }
+  return [0,0,0,0,0,0,0]
 }
 
 function formatHours(totalMinutes) {
@@ -38,21 +40,14 @@ function MetricCard({ emoji, value, label, children }) {
   )
 }
 
-function WeeklyChart({ weeklyData }) {
-  const rawWeekly = weeklyData
-  const data = Array.isArray(rawWeekly)
-    ? rawWeekly
-    : (() => {
-        try { return JSON.parse(rawWeekly || '[0,0,0,0,0,0,0]') }
-        catch { return [0,0,0,0,0,0,0] }
-      })()
-
-  const maxVal = Math.max(...data, 1)
+function WeeklyChart({ weeklyData: rawWeekly }) {
+  const weeklyData = parseWeekly(rawWeekly)
+  const maxVal = Math.max(...weeklyData, 1)
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
 
   return (
     <div className="stats-chart-bars">
-      {data.map((val, i) => {
+      {weeklyData.map((val, i) => {
         const heightPct = Math.max((val / maxVal) * 100, 4)
         const isToday = i === todayIndex
 

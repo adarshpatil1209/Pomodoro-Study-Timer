@@ -10,6 +10,30 @@ export default function ChatWidget() {
   const [toastMsg, setToastMsg] = useState(null)
   const chatChannelRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const originalTitle = useRef(document.title)
+  const notifInterval = useRef(null)
+
+  const showTabNotification = (count) => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    let show = true
+    notifInterval.current = setInterval(() => {
+      document.title = show
+        ? `(${count}) New message 💬`
+        : originalTitle.current
+      show = !show
+    }, 1000)
+  }
+
+  const clearTabNotification = () => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    document.title = originalTitle.current
+  }
+
+  useEffect(() => {
+    const handleFocus = () => clearTabNotification()
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
 
   useEffect(() => {
     const channel = supabase.channel('study-chat', {
@@ -23,10 +47,16 @@ export default function ChatWidget() {
         setMessages(prev => [...prev.slice(-20), msg])
         
         setChatOpen(currentOpen => {
-          if (!currentOpen) {
-            setUnreadCount(prev => prev + 1)
-            setToastMsg(msg.text)
-            setTimeout(() => setToastMsg(null), 5000)
+          if (document.hidden || !currentOpen) {
+            setUnreadCount(prev => {
+              const newCount = prev + 1
+              showTabNotification(newCount)
+              return newCount
+            })
+            if (!currentOpen) {
+              setToastMsg(msg.text)
+              setTimeout(() => setToastMsg(null), 5000)
+            }
           }
           return currentOpen
         })
@@ -40,6 +70,7 @@ export default function ChatWidget() {
   useEffect(() => {
     if (chatOpen) {
       setUnreadCount(0)
+      clearTabNotification()
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [chatOpen, messages])
