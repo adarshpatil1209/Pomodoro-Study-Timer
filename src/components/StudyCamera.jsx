@@ -101,7 +101,7 @@ export default function StudyCamera({ isOpen, onClose }) {
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.96 }}
         style={{
-          position: 'fixed', bottom: 80, left: 20, zIndex: 100,
+          position: 'fixed', bottom: 20, left: 20, zIndex: 100,
           background: '#6B0A14', border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: '999px', padding: '8px 16px',
           color: '#C8B89A', fontFamily: 'DM Sans', fontSize: '12px',
@@ -179,40 +179,72 @@ export default function StudyCamera({ isOpen, onClose }) {
         )}
       </AnimatePresence>
 
-      {/* Incoming snap overlay */}
+      {/* Incoming snap — floating card bottom-right */}
       <AnimatePresence>
         {snapVisible && incomingSnap && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={dismissIncoming}
+            initial={{ x: 60, opacity: 0, scale: 0.9 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: 60, opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
-              position: 'fixed', inset: 0, zIndex: 1000,
-              background: 'rgba(20,2,4,0.92)',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer'
+              position: 'fixed',
+              bottom: '80px',
+              right: '20px',
+              zIndex: 999,
+              cursor: 'pointer',
+              width: '200px',
             }}
+            onClick={dismissIncoming}
           >
-            <motion.img
-              src={incomingSnap.image}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              style={{
-                width: '300px', borderRadius: '20px',
-                border: '1px solid rgba(255,255,255,0.10)'
-              }}
-            />
-            <span style={{
-              marginTop: '16px',
-              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
-              fontSize: '14px', color: '#9A7A6A'
-            }}>
-              click anywhere to close
-            </span>
+            <div style={{ position: 'relative' }}>
+              <img
+                src={incomingSnap.image}
+                alt="Snap"
+                style={{
+                  width: '200px',
+                  height: '150px',
+                  objectFit: 'cover',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  display: 'block'
+                }}
+              />
+              {/* Close button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dismissIncoming()
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.6)',
+                  border: 'none',
+                  color: '#F5EFE6',
+                  fontSize: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >✕</button>
+              {/* Tap to close hint */}
+              <div style={{
+                textAlign: 'center',
+                marginTop: '6px',
+                fontFamily: 'Cormorant Garamond',
+                fontStyle: 'italic',
+                fontSize: '12px',
+                color: '#9A7A6A'
+              }}>
+                tap to close
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

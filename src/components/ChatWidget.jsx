@@ -121,7 +121,7 @@ export default function ChatWidget() {
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.96 }}
         style={{
-          position: 'fixed', bottom: 140, left: 20, zIndex: 100,
+          position: 'fixed', bottom: 70, left: 20, zIndex: 100,
           background: '#6B0A14', border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: '999px', padding: '8px 16px',
           cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -152,7 +152,7 @@ export default function ChatWidget() {
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
-              position: 'fixed', bottom: 190, left: 20,
+              position: 'fixed', bottom: 120, left: 20,
               width: '280px', zIndex: 100,
               background: '#6B0A14', borderRadius: '20px',
               border: '1px solid rgba(255,255,255,0.10)',

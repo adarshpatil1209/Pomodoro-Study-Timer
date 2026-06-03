@@ -501,52 +501,68 @@ export default function WatchPage() {
       <AnimatePresence>
         {snapVisible && incomingSnap && (
           <motion.div
-            initial={{ x: 60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 60, opacity: 0 }}
+            initial={{ x: 60, opacity: 0, scale: 0.9 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: 60, opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
-              position: 'fixed', bottom: 20, right: 20, zIndex: 999,
-              display: 'flex', flexDirection: 'column', alignItems: 'center'
+              position: 'fixed',
+              bottom: '80px',
+              right: '20px',
+              zIndex: 999,
+              cursor: 'pointer',
+              width: '200px',
             }}
+            onClick={dismissIncoming}
           >
-            <div
-              onClick={dismissIncoming}
-              style={{
-                width: '200px', height: '150px',
-                borderRadius: '20px', overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.12)',
-                cursor: 'pointer', position: 'relative'
-              }}
-            >
+            <div style={{ position: 'relative' }}>
               <img
                 src={incomingSnap.image}
                 alt="Snap"
                 style={{
-                  width: '100%', height: '100%', objectFit: 'cover',
+                  width: '200px',
+                  height: '150px',
+                  objectFit: 'cover',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.12)',
                   display: 'block'
                 }}
               />
               {/* Close button */}
               <button
-                onClick={(e) => { e.stopPropagation(); dismissIncoming() }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dismissIncoming()
+                }}
                 style={{
-                  position: 'absolute', top: 6, right: 6,
-                  width: 22, height: 22, borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.5)',
-                  border: 'none', color: 'white', fontSize: '10px',
-                  cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center'
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.6)',
+                  border: 'none',
+                  color: '#F5EFE6',
+                  fontSize: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >✕</button>
+              {/* Tap to close hint */}
+              <div style={{
+                textAlign: 'center',
+                marginTop: '6px',
+                fontFamily: 'Cormorant Garamond',
+                fontStyle: 'italic',
+                fontSize: '12px',
+                color: '#9A7A6A'
+              }}>
+                tap to close
+              </div>
             </div>
-            <span style={{
-              marginTop: '6px',
-              fontFamily: 'DM Sans, sans-serif', fontSize: '11px',
-              color: '#9A7A6A', textAlign: 'center'
-            }}>
-              tap to close
-            </span>
           </motion.div>
         )}
       </AnimatePresence>
