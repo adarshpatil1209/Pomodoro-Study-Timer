@@ -117,7 +117,7 @@ export default function AIChat() {
           position: 'fixed',
           bottom: 170,
           left: 20,
-          zIndex: 101,
+          zIndex: 100,
           background: '#6B0A14',
           border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: '999px',
