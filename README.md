@@ -1,4 +1,4 @@
-# pomo-love 🍅🩺
+# pomodoro web
 
 A beautiful pomodoro timer built for focused study sessions.
 
