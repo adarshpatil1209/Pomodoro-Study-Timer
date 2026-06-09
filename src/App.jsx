@@ -16,6 +16,7 @@ import { Routes, Route } from 'react-router-dom'
 import StudyCamera, { StudyCameraToggle } from './components/StudyCamera'
 import WatchPage from './pages/WatchPage'
 import ChatWidget from './components/ChatWidget'
+import CalendarTodos from './components/CalendarTodos'
 
 import './App.css'
 
@@ -319,9 +320,8 @@ function MainApp() {
 
       {/* Fixed elements */}
       <MusicPlayer />
+      <CalendarTodos />
       <ChatWidget />
-
-
       <StudyCamera isOpen={cameraOpen} onClose={() => setCameraOpen(false)} />
 
       <Toast
