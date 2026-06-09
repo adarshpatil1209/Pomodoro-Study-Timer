@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Plus } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import './TodoList.css'
+
+const getTodayStr = () => {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 
 const SUBJECTS = ['Physics', 'Chemistry', 'Botany', 'Zoology', 'Custom']
 
@@ -75,12 +84,63 @@ function TodoRow({ todo, onToggle, onDelete }) {
 }
 
 export default function TodoList({ todosHook, onTaskComplete }) {
-  const { todos, addTodo, toggleTodo, deleteTodo } = todosHook
+  const { todos, addTodo, toggleTodo, deleteTodo, bulkAddTodos } = todosHook
 
   const [text, setText] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('Physics')
   const [customSubject, setCustomSubject] = useState('')
   const [priority, setPriority] = useState('normal')
+
+  const [copied, setCopied] = useState(false)
+  const [nothingToCopy, setNothingToCopy] = useState(false)
+
+  useEffect(() => {
+    const lastCopied = localStorage.getItem('tasks-copied-date')
+    const today = getTodayStr()
+    if (lastCopied === today) setCopied(true)
+  }, [])
+
+  const copyFromCalendar = async () => {
+    const today = getTodayStr()
+    
+    // Fetch today's tasks from dated_todos
+    const { data: calendarTasks } = await supabase
+      .from('dated_todos')
+      .select('*')
+      .eq('date', today)
+      .eq('completed', false)  // only incomplete tasks
+    
+    if (!calendarTasks || calendarTasks.length === 0) {
+      // Nothing to copy — show brief message
+      setNothingToCopy(true)
+      setTimeout(() => setNothingToCopy(false), 2000)
+      return
+    }
+    
+    // Insert into todos table
+    const toInsert = calendarTasks.map(t => ({
+      text: t.text,
+      subject: t.subject,
+      priority: t.priority,
+      completed: false
+    }))
+    
+    const { data: inserted } = await supabase
+      .from('todos')
+      .insert(toInsert)
+      .select()
+    
+    if (inserted) {
+      if (bulkAddTodos) {
+        bulkAddTodos(inserted)
+      } else {
+        // fallback if hook not updated yet
+        window.location.reload()
+      }
+      setCopied(true)
+      localStorage.setItem('tasks-copied-date', today)
+    }
+  }
 
   const handleAdd = () => {
     const trimmed = text.trim()
@@ -110,7 +170,40 @@ export default function TodoList({ todosHook, onTaskComplete }) {
 
   return (
     <div className="todo-section">
-      <span className="section-label">TODAY'S TASKS</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <span className="section-label" style={{ marginBottom: 0 }}>TODAY'S TASKS</span>
+        
+        {nothingToCopy ? (
+          <motion.span
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            style={{
+              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+              fontSize: '13px', color: '#9A7A6A'
+            }}
+          >
+            No tasks in Planner for today 🌸
+          </motion.span>
+        ) : copied ? (
+          <span style={{ fontFamily: 'DM Sans', fontSize: '11px', color: '#7DAA96' }}>
+            ✓ Copied from Planner today
+          </span>
+        ) : (
+          <motion.button
+            onClick={copyFromCalendar}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              background: 'rgba(125,170,150,0.12)', border: '1px solid rgba(125,170,150,0.25)',
+              borderRadius: '999px', padding: '4px 12px',
+              fontFamily: 'DM Sans', fontSize: '11px', color: '#7DAA96', cursor: 'pointer'
+            }}
+          >
+            📅 Copy today from Planner
+          </motion.button>
+        )}
+      </div>
 
       <div className="todo-card card">
         {/* Add task row */}

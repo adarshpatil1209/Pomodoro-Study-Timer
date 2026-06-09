@@ -163,46 +163,6 @@ function MainApp() {
   })
   const { loading: todosLoading } = todosHook
 
-  // Migration logic
-  useEffect(() => {
-    const migrateOldTodos = async () => {
-      const getTodayStr = () => {
-        const now = new Date()
-        const y = now.getFullYear()
-        const m = String(now.getMonth() + 1).padStart(2, '0')
-        const d = String(now.getDate()).padStart(2, '0')
-        return `${y}-${m}-${d}`
-      }
-      const today = getTodayStr()
-      
-      // Check if migration already done
-      const done = localStorage.getItem('todos-migrated')
-      if (done) return
-      
-      // Fetch old todos table
-      const { data: oldTodos } = await supabase
-        .from('todos')
-        .select('*')
-      
-      if (oldTodos && oldTodos.length > 0) {
-        // Insert into dated_todos with today's date
-        const migrated = oldTodos.map(t => ({
-          text: t.text,
-          date: today,
-          completed: t.completed,
-          subject: t.subject || 'General',
-          priority: t.priority || 'normal'
-        }))
-        
-        await supabase.from('dated_todos').insert(migrated)
-      }
-      
-      localStorage.setItem('todos-migrated', 'true')
-    }
-    
-    migrateOldTodos()
-  }, [])
-
   // EndOfDay: auto-show after 9pm if not dismissed
   useEffect(() => {
     if (eodDismissed || !stats) return
@@ -331,7 +291,10 @@ function MainApp() {
           zIndex: 100,
           background: '#3D0408',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 0,
+          boxShadow: 'none',
           padding: '16px 28px 12px',
+          margin: '0 -28px 24px -28px',
         }}
       >
         <div className="app-header-left">
