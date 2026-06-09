@@ -12,6 +12,14 @@ export default function CalendarTodos() {
   const [priority, setPriority] = useState('normal')
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 500)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const formatDate = (date) => {
     const y = date.getFullYear()
@@ -194,21 +202,23 @@ export default function CalendarTodos() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
               position: 'fixed',
-              bottom: 170, // position above the button
-              left: 20,
-              zIndex: 90,
+              bottom: '80px',
+              left: '20px',
+              right: isMobile ? '20px' : 'auto',
+              zIndex: 500,
               background: '#6B0A14',
               borderRadius: '24px',
               border: '1px solid rgba(255,255,255,0.10)',
               padding: '20px 22px',
-              width: '100%',
-              maxWidth: '360px',
+              width: isMobile ? 'calc(100vw - 40px)' : 'min(360px, calc(100vw - 40px))',
+              maxHeight: 'calc(100vh - 120px)',
+              overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box'
@@ -252,14 +262,16 @@ export default function CalendarTodos() {
                     whileHover={day.isCurrentMonth ? { scale: 1.1 } : {}}
                     whileTap={{ scale: 0.9 }}
                     style={{
-                      width: '36px', height: '36px',
+                      width: 'clamp(28px, 8vw, 36px)',
+                      height: 'clamp(28px, 8vw, 36px)',
                       borderRadius: '50%',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer',
                       background: isSelected ? '#C8B89A' : 'transparent',
                       color: isSelected ? '#6B0A14' : (day.isCurrentMonth ? '#C8B89A' : 'rgba(200,184,154,0.25)'),
                       border: isToday && !isSelected ? '1px solid rgba(200,184,154,0.40)' : '1px solid transparent',
-                      fontFamily: 'DM Sans, sans-serif', fontSize: '14px',
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 'clamp(10px, 2.5vw, 13px)',
                       position: 'relative'
                     }}
                   >
