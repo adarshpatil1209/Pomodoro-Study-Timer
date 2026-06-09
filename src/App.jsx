@@ -286,15 +286,19 @@ function MainApp() {
           ease: 'easeInOut'
         }}
         style={{
+          background: '#3D0408',
+          borderRadius: 0,
+          boxShadow: 'none',
+          border: 'none',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          background: '#3D0408',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 0,
-          boxShadow: 'none',
           padding: '16px 28px 12px',
-          margin: '0 -28px 24px -28px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
         <div className="app-header-left">
