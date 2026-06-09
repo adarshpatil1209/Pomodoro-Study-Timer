@@ -243,7 +243,30 @@ function MainApp() {
   const displayName = stats?.display_name || 'love'
   const streakDays = stats?.streak_days || 0
 
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      if (currentScrollY < 10) {
+        // At top — always show
+        setHeaderVisible(true)
+      } else if (currentScrollY > lastScrollY) {
+        // Scrolling down — hide
+        setHeaderVisible(false)
+      } else {
+        // Scrolling up — show
+        setHeaderVisible(true)
+      }
+      
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
 
   return (
     <div className="app-root page-pad">
@@ -291,7 +314,26 @@ function MainApp() {
       </div>
 
       {/* Header */}
-      <header className="app-header header">
+      <motion.header
+        className="app-header header"
+        animate={{
+          opacity: headerVisible ? 1 : 0,
+          y: headerVisible ? 0 : -20,
+          pointerEvents: headerVisible ? 'auto' : 'none'
+        }}
+        transition={{
+          duration: 0.3,
+          ease: 'easeInOut'
+        }}
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          background: '#3D0408',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '16px 28px 12px',
+        }}
+      >
         <div className="app-header-left">
           <span className="app-logo font-display">Dr.Suru</span>
           <span className="app-logo-icon">🩺</span>
@@ -323,7 +365,7 @@ function MainApp() {
             onToggle={() => setCameraOpen((v) => !v)}
           />
         </div>
-      </header>
+      </motion.header>
 
       {/* Main grid */}
       <main className="app-grid">
