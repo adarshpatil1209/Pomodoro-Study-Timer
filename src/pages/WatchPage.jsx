@@ -11,8 +11,6 @@ export default function WatchPage() {
   const [chatInput, setChatInput] = useState('')
   const [isMobile, setIsMobile] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
-  const [destroying, setDestroying] = useState(false)
-  const [destroyCountdown, setDestroyCountdown] = useState(30)
   const [clearedMsg, setClearedMsg] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
 
@@ -30,9 +28,6 @@ export default function WatchPage() {
   const messagesEndRef = useRef(null)
   const originalTitle = useRef(document.title)
   const notifInterval = useRef(null)
-  const destroyTimerRef = useRef(null)
-  const countdownRef = useRef(null)
-  const chatVisibleRef = useRef(false)
 
   const showTabNotification = (count) => {
     if (notifInterval.current) clearInterval(notifInterval.current)
@@ -114,136 +109,54 @@ export default function WatchPage() {
     }
   }, [])
 
-  // Subscribe to realtime INSERT and DELETE
-  const subscribeToMessages = useCallback(() => {
-    const channel = supabase
-      .channel('messages-realtime-viewer')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const newMsg = payload.new
-          setMessages(prev => [...prev, newMsg])
-
-          if (newMsg.from_role === 'her') {
-            if (document.hidden) {
-              setUnreadCount(prev => {
-                const newCount = prev + 1
-                showTabNotification(newCount)
-                return newCount
-              })
-            }
-          }
-        }
-      )
-      .on('postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'messages' },
-        () => {
-          setMessages([])
-          setDestroyCountdown(30)
-          setDestroying(false)
-          clearInterval(countdownRef.current)
-          clearTimeout(destroyTimerRef.current)
-          setClearedMsg(true)
-          setTimeout(() => setClearedMsg(false), 2000)
-        }
-      )
-      .subscribe()
-
-    chatChannelRef.current = channel
-  }, [])
-
-  // Delete all messages
-  const deleteAllMessages = async () => {
-    await supabase
-      .from('messages')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000')
-
-    setMessages([])
-    setDestroyCountdown(30)
-    setDestroying(false)
-    clearInterval(countdownRef.current)
-    clearTimeout(destroyTimerRef.current)
-    setClearedMsg(true)
-    setTimeout(() => setClearedMsg(false), 2000)
-  }
-
-  // FIX 1+2+3 — Check server-side destruction_started_at and resume/start countdown
-  const checkAndStartDestruction = useCallback(async () => {
-    // Check if any message already has destruction_started_at set
-    const { data: existing } = await supabase
-      .from('messages')
-      .select('destruction_started_at')
-      .not('destruction_started_at', 'is', null)
-      .limit(1)
-
-    let destroyAt
-
-    if (existing && existing.length > 0) {
-      // Timer already started by someone — calculate remaining
-      destroyAt = new Date(existing[0].destruction_started_at)
-    } else {
-      // First to open — set the timer now
-      destroyAt = new Date(Date.now() + 30000)
-      await supabase
-        .from('messages')
-        .update({ destruction_started_at: destroyAt.toISOString() })
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-    }
-
-    const remaining = Math.ceil((destroyAt.getTime() - Date.now()) / 1000)
-
-    if (remaining <= 0) {
-      deleteAllMessages()
-      return
-    }
-
-    // Mark her messages as read
-    supabase
-      .from('messages')
-      .update({ read_at: new Date().toISOString() })
-      .eq('from_role', 'her')
-      .is('read_at', null)
-      .then(() => {})
-
-    // Start local countdown from remaining seconds
-    setDestroying(true)
-    setDestroyCountdown(remaining)
-    setClearedMsg(false)
-
-    clearInterval(countdownRef.current)
-    clearTimeout(destroyTimerRef.current)
-
-    countdownRef.current = setInterval(() => {
-      setDestroyCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    destroyTimerRef.current = setTimeout(() => {
-      deleteAllMessages()
-    }, remaining * 1000)
-  }, [])
-
   // Initialize channels when authenticated
-  // FIX 7 — Fetch messages first, THEN start destruction timer
   useEffect(() => {
     if (!authed) return
 
-    // FIX 4 — Clean old messages on mount
     cleanOldMessages()
+    fetchMessages()
 
-    subscribeToMessages()
+    // Chat subscription
+    const channel = supabase
+      .channel('messages-changes-viewer-' + Date.now())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Realtime event (viewer):', payload)
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new
+            setMessages(prev => {
+              // avoid duplicates
+              if (prev.find(m => m.id === newMsg.id)) return prev
+              return [...prev, newMsg]
+            })
+            if (newMsg.from_role === 'her') {
+              if (document.hidden) {
+                setUnreadCount(prev => {
+                  const newCount = prev + 1
+                  showTabNotification(newCount)
+                  return newCount
+                })
+              }
+            }
+          }
+          if (payload.eventType === 'DELETE') {
+            setMessages([])
+            setClearedMsg(true)
+            setTimeout(() => setClearedMsg(false), 2000)
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Viewer chat subscription status:', status)
+      })
 
-    // Fetch messages first, then check/start destruction timer
-    fetchMessages().then(() => {
-      checkAndStartDestruction()
-    })
-    chatVisibleRef.current = true
+    chatChannelRef.current = channel
 
     // Snap channel
     const snapChannel = supabase.channel('instant-snap', {
@@ -260,12 +173,10 @@ export default function WatchPage() {
     snapChannel.subscribe()
 
     return () => {
-      chatChannelRef.current?.unsubscribe()
+      supabase.removeChannel(channel)
       snapChannel.unsubscribe()
-      clearTimeout(destroyTimerRef.current)
-      clearInterval(countdownRef.current)
     }
-  }, [authed, cleanOldMessages, fetchMessages, subscribeToMessages, checkAndStartDestruction])
+  }, [authed, cleanOldMessages, fetchMessages])
 
   // Dismiss incoming snap on Escape
   useEffect(() => {
@@ -293,8 +204,6 @@ export default function WatchPage() {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const isPulsing = destroying && destroyCountdown < 10 && destroyCountdown > 0
-
   // Clear all messages (manual clear button)
   const clearAllMessages = async () => {
     const { error } = await supabase
@@ -305,10 +214,8 @@ export default function WatchPage() {
     if (!error) {
       setMessages([])
       setConfirmClear(false)
-      setDestroyCountdown(30)
-      setDestroying(false)
-      clearTimeout(destroyTimerRef.current)
-      clearInterval(countdownRef.current)
+      setClearedMsg(true)
+      setTimeout(() => setClearedMsg(false), 2000)
     }
   }
 
@@ -503,7 +410,7 @@ export default function WatchPage() {
             margin: '4px 0 12px 0'
           }} />
 
-          {/* Section Label + Countdown */}
+          {/* Section Label */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             marginBottom: '-4px'
@@ -515,77 +422,51 @@ export default function WatchPage() {
               MESSAGES
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {destroying && destroyCountdown > 0 && (
-                <motion.div
-                  animate={destroyCountdown < 10
-                    ? { scale: [1, 1.05, 1] }
-                    : {}
-                  }
-                  transition={destroyCountdown < 10
-                    ? { duration: 0.8, repeat: Infinity }
-                    : {}
-                  }
-                  style={{
-                    background: 'rgba(176,48,48,0.20)',
-                    borderRadius: '999px',
-                    padding: '3px 10px',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '11px',
-                    color: '#B03030',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  🔥 deleting in {destroyCountdown}s
-                </motion.div>
-              )}
-
-              {/* Clear button with confirmation */}
-              {!confirmClear ? (
+            {/* Clear button with confirmation */}
+            {!confirmClear ? (
+              <motion.button
+                onClick={() => setConfirmClear(true)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{
+                  width: '24px', height: '24px', borderRadius: '50%',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  color: '#B03030', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 0
+                }}
+              >
+                <Trash2 size={14} />
+              </motion.button>
+            ) : (
+              <div style={{ display: 'flex', gap: '3px' }}>
                 <motion.button
-                  onClick={() => setConfirmClear(true)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  onClick={clearAllMessages}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   style={{
-                    width: '24px', height: '24px', borderRadius: '50%',
+                    background: 'rgba(176,48,48,0.25)',
+                    border: '1px solid rgba(176,48,48,0.4)',
+                    borderRadius: '8px', padding: '2px 6px',
+                    fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
+                    color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
+                  }}
+                >Yes 🗑️</motion.button>
+                <motion.button
+                  onClick={() => setConfirmClear(false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
                     background: 'transparent',
                     border: '1px solid rgba(255,255,255,0.14)',
-                    color: '#B03030', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 0
+                    borderRadius: '8px', padding: '2px 6px',
+                    fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
+                    color: '#F5EFE6', cursor: 'pointer'
                   }}
-                >
-                  <Trash2 size={14} />
-                </motion.button>
-              ) : (
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  <motion.button
-                    onClick={clearAllMessages}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      background: 'rgba(176,48,48,0.25)',
-                      border: '1px solid rgba(176,48,48,0.4)',
-                      borderRadius: '8px', padding: '2px 6px',
-                      fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
-                      color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
-                    }}
-                  >Yes 🗑️</motion.button>
-                  <motion.button
-                    onClick={() => setConfirmClear(false)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      borderRadius: '8px', padding: '2px 6px',
-                      fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
-                      color: '#F5EFE6', cursor: 'pointer'
-                    }}
-                  >No</motion.button>
-                </div>
-              )}
-            </div>
+                >No</motion.button>
+              </div>
+            )}
           </div>
 
           {/* Messages list */}
@@ -599,15 +480,9 @@ export default function WatchPage() {
                 <motion.div
                   key={msg.id}
                   initial={{ x: msg.from_role === 'viewer' ? 20 : -20, opacity: 0 }}
-                  animate={isPulsing
-                    ? { x: 0, opacity: [1, 0.4, 1] }
-                    : { x: 0, opacity: 1 }
-                  }
+                  animate={{ x: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0, scale: 0.8 }}
-                  transition={isPulsing
-                    ? { opacity: { duration: 0.8, repeat: Infinity }, x: { duration: 0.2 } }
-                    : { duration: 0.2 }
-                  }
+                  transition={{ duration: 0.2 }}
                   style={{
                     display: 'flex', flexDirection: 'column',
                     alignItems: msg.from_role === 'viewer' ? 'flex-end' : 'flex-start',
@@ -672,7 +547,6 @@ export default function WatchPage() {
                 color: '#9A7A6A'
               }}>
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet 🌸</div>
-                <div style={{ fontSize: '11px', opacity: 0.7 }}>Messages disappear 30s after reading</div>
               </div>
             )}
 

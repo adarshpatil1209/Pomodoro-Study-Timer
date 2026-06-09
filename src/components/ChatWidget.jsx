@@ -9,13 +9,9 @@ export default function ChatWidget() {
   const [chatInput, setChatInput] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
   const [toastMsg, setToastMsg] = useState(null)
-  const [destroying, setDestroying] = useState(false)
-  const [destroyCountdown, setDestroyCountdown] = useState(30)
   const [clearedMsg, setClearedMsg] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
 
-  const destroyTimerRef = useRef(null)
-  const countdownRef = useRef(null)
   const channelRef = useRef(null)
   const messagesEndRef = useRef(null)
   const originalTitle = useRef(document.title)
@@ -49,7 +45,7 @@ export default function ChatWidget() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  // FIX 4 — Auto cleanup messages older than 24 hours
+  // Auto cleanup messages older than 24 hours
   const cleanOldMessages = useCallback(async () => {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
     await supabase
@@ -58,7 +54,7 @@ export default function ChatWidget() {
       .lt('created_at', cutoff.toISOString())
   }, [])
 
-  // FIX 5 — Fetch with limit(50)
+  // Fetch with limit(50)
   const fetchMessages = useCallback(async () => {
     const { data } = await supabase
       .from('messages')
@@ -74,152 +70,58 @@ export default function ChatWidget() {
     }
   }, [])
 
-  // Subscribe to realtime INSERT and DELETE
-  const subscribeToMessages = useCallback(() => {
-    const channel = supabase
-      .channel('messages-realtime')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const newMsg = payload.new
-          setMessages(prev => [...prev, newMsg])
+  // Mount: clean old messages, fetch + subscribe
+  useEffect(() => {
+    cleanOldMessages()
+    fetchMessages()
 
-          if (newMsg.from_role === 'viewer') {
-            setUnreadCount(prev => {
-              const count = prev + 1
-              showTabNotification(count)
-              return count
+    const channel = supabase
+      .channel('messages-changes-' + Date.now())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Realtime event:', payload)
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new
+            setMessages(prev => {
+              // avoid duplicates
+              if (prev.find(m => m.id === newMsg.id)) return prev
+              return [...prev, newMsg]
             })
-            if (!chatOpenRef.current) {
-              setToastMsg(newMsg.text)
-              setTimeout(() => setToastMsg(null), 5000)
+            if (newMsg.from_role === 'viewer') {
+              setUnreadCount(prev => {
+                const count = prev + 1
+                showTabNotification(count)
+                return count
+              })
+              if (!chatOpenRef.current) {
+                setToastMsg(newMsg.text)
+                setTimeout(() => setToastMsg(null), 5000)
+              }
             }
+          }
+          if (payload.eventType === 'DELETE') {
+            setMessages([])
+            setClearedMsg(true)
+            setTimeout(() => setClearedMsg(false), 2000)
           }
         }
       )
-      .on('postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'messages' },
-        () => {
-          setMessages([])
-          setDestroyCountdown(30)
-          setDestroying(false)
-          clearInterval(countdownRef.current)
-          clearTimeout(destroyTimerRef.current)
-          setClearedMsg(true)
-          setTimeout(() => setClearedMsg(false), 2000)
-        }
-      )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status)
+      })
 
     channelRef.current = channel
-  }, [])
 
-  // FIX 1+2+3 — Check server-side destruction_started_at and resume/start countdown
-  const checkAndStartDestruction = useCallback(async () => {
-    // Check if any message already has destruction_started_at set
-    const { data: existing } = await supabase
-      .from('messages')
-      .select('destruction_started_at')
-      .not('destruction_started_at', 'is', null)
-      .limit(1)
-
-    let destroyAt
-
-    if (existing && existing.length > 0) {
-      // Timer already started by someone — calculate remaining
-      destroyAt = new Date(existing[0].destruction_started_at)
-    } else {
-      // First to open — set the timer now
-      destroyAt = new Date(Date.now() + 30000)
-      await supabase
-        .from('messages')
-        .update({ destruction_started_at: destroyAt.toISOString() })
-        .neq('id', '00000000-0000-0000-0000-000000000000')
-    }
-
-    const remaining = Math.ceil((destroyAt.getTime() - Date.now()) / 1000)
-
-    if (remaining <= 0) {
-      // Timer already expired — delete immediately
-      deleteAllMessages()
-      return
-    }
-
-    // Start local countdown from remaining seconds
-    setDestroying(true)
-    setDestroyCountdown(remaining)
-    setClearedMsg(false)
-
-    clearInterval(countdownRef.current)
-    clearTimeout(destroyTimerRef.current)
-
-    countdownRef.current = setInterval(() => {
-      setDestroyCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    destroyTimerRef.current = setTimeout(() => {
-      deleteAllMessages()
-    }, remaining * 1000)
-  }, [])
-
-  // Mount: clean old messages, fetch + subscribe, check existing timer
-  useEffect(() => {
-    cleanOldMessages()
-    fetchMessages().then(() => {
-      // Check if a destruction timer is already running in DB
-      checkExistingTimer()
-    })
-    subscribeToMessages()
     return () => {
-      channelRef.current?.unsubscribe()
-      clearTimeout(destroyTimerRef.current)
-      clearInterval(countdownRef.current)
+      supabase.removeChannel(channel)
     }
-  }, [cleanOldMessages, fetchMessages, subscribeToMessages])
-
-  // On mount — check if destruction timer already exists and resume it
-  const checkExistingTimer = useCallback(async () => {
-    const { data: existing } = await supabase
-      .from('messages')
-      .select('destruction_started_at')
-      .not('destruction_started_at', 'is', null)
-      .limit(1)
-
-    if (existing && existing.length > 0) {
-      const destroyAt = new Date(existing[0].destruction_started_at)
-      const remaining = Math.ceil((destroyAt.getTime() - Date.now()) / 1000)
-
-      if (remaining <= 0) {
-        deleteAllMessages()
-      } else {
-        setDestroying(true)
-        setDestroyCountdown(remaining)
-
-        clearInterval(countdownRef.current)
-        clearTimeout(destroyTimerRef.current)
-
-        countdownRef.current = setInterval(() => {
-          setDestroyCountdown(prev => {
-            if (prev <= 1) {
-              clearInterval(countdownRef.current)
-              return 0
-            }
-            return prev - 1
-          })
-        }, 1000)
-
-        destroyTimerRef.current = setTimeout(() => {
-          deleteAllMessages()
-        }, remaining * 1000)
-      }
-    }
-  }, [])
+  }, [cleanOldMessages, fetchMessages])
 
   // Auto-scroll
   useEffect(() => {
@@ -237,23 +139,7 @@ export default function ChatWidget() {
     if (!error) setChatInput('')
   }
 
-  // Delete all messages
-  const deleteAllMessages = async () => {
-    await supabase
-      .from('messages')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000')
-
-    setMessages([])
-    setDestroyCountdown(30)
-    setDestroying(false)
-    clearInterval(countdownRef.current)
-    clearTimeout(destroyTimerRef.current)
-    setClearedMsg(true)
-    setTimeout(() => setClearedMsg(false), 2000)
-  }
-
-  // FIX 7 — Open chat: fetch messages first, THEN start destruction timer
+  // Open chat
   const openChat = () => {
     setChatOpen(true)
     setUnreadCount(0)
@@ -268,22 +154,16 @@ export default function ChatWidget() {
       .is('read_at', null)
       .then(() => {})
 
-    // Fetch messages first, THEN start timer
-    fetchMessages().then(() => {
-      checkAndStartDestruction()
-    })
+    fetchMessages()
   }
 
   const closeChat = () => {
     setChatOpen(false)
-    // Timer keeps running — messages still delete after 30s
   }
 
   const formatTime = (dateStr) => {
     return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
-
-  const isPulsing = destroying && destroyCountdown < 10 && destroyCountdown > 0
 
   // Clear all messages (manual clear button)
   const clearAllMessages = async () => {
@@ -295,10 +175,8 @@ export default function ChatWidget() {
     if (!error) {
       setMessages([])
       setConfirmClear(false)
-      setDestroyCountdown(30)
-      setDestroying(false)
-      clearTimeout(destroyTimerRef.current)
-      clearInterval(countdownRef.current)
+      setClearedMsg(true)
+      setTimeout(() => setClearedMsg(false), 2000)
     }
   }
 
@@ -400,31 +278,6 @@ export default function ChatWidget() {
                 fontSize: '16px', color: '#F5EFE6'
               }}>Messages</span>
 
-              {/* Countdown pill */}
-              {destroying && destroyCountdown > 0 && (
-                <motion.div
-                  animate={destroyCountdown < 10
-                    ? { scale: [1, 1.05, 1] }
-                    : {}
-                  }
-                  transition={destroyCountdown < 10
-                    ? { duration: 0.8, repeat: Infinity }
-                    : {}
-                  }
-                  style={{
-                    background: 'rgba(176,48,48,0.20)',
-                    borderRadius: '999px',
-                    padding: '3px 10px',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '11px',
-                    color: '#B03030',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  🔥 deleting in {destroyCountdown}s
-                </motion.div>
-              )}
-
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {/* Clear button with confirmation */}
                 {!confirmClear ? (
@@ -495,15 +348,9 @@ export default function ChatWidget() {
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
-                    animate={isPulsing
-                      ? { opacity: [1, 0.4, 1], y: 0 }
-                      : { opacity: 1, y: 0 }
-                    }
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ y: -10, opacity: 0, scale: 0.8 }}
-                    transition={isPulsing
-                      ? { opacity: { duration: 0.8, repeat: Infinity }, y: { duration: 0.2 } }
-                      : { duration: 0.2 }
-                    }
+                    transition={{ duration: 0.2 }}
                     style={{
                       alignSelf: msg.from_role === 'viewer' ? 'flex-start' : 'flex-end',
                       maxWidth: '85%'
@@ -559,7 +406,6 @@ export default function ChatWidget() {
                   color: '#9A7A6A'
                 }}>
                   <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet 🌸</div>
-                  <div style={{ fontSize: '11px', opacity: 0.7 }}>Messages disappear 30s after reading</div>
                 </div>
               )}
 
