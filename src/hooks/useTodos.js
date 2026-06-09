@@ -10,81 +10,107 @@ export function useTodos({ onComplete } = {}) {
     onCompleteRef.current = onComplete
   }, [onComplete])
 
+  const getTodayStr = () => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
   useEffect(() => {
-    const fetchTodos = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('todos')
-          .select('*')
-          .order('created_at', { ascending: false })
-
-        if (error) throw error
-        setTodos(data || [])
-      } catch (err) {
-        console.error('Todos fetch failed:', err)
-        setTodos([])
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchTodos()
+    fetchTodayTodos()
+    subscribeToTodayTodos()
   }, [])
 
-  const addTodo = useCallback(async (text, subject, priority) => {
+  const fetchTodayTodos = async () => {
+    const today = getTodayStr()
     const { data, error } = await supabase
-      .from('todos')
-      .insert([{ text, subject, priority, completed: false }])
+      .from('dated_todos')
+      .select('*')
+      .eq('date', today)
+      .order('created_at', { ascending: true })
+
+    if (data) setTodos(data)
+    setLoading(false)
+  }
+
+  const subscribeToTodayTodos = () => {
+    const today = getTodayStr()
+    
+    supabase
+      .channel('todays-todos-' + Date.now())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dated_todos',
+          filter: `date=eq.${today}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTodos(prev => {
+              if (prev.find(t => t.id === payload.new.id)) return prev
+              return [...prev, payload.new]
+            })
+          }
+          if (payload.eventType === 'UPDATE') {
+            setTodos(prev => prev.map(t =>
+              t.id === payload.new.id ? payload.new : t
+            ))
+          }
+          if (payload.eventType === 'DELETE') {
+            setTodos(prev => prev.filter(t => t.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+  }
+
+  const addTodo = async (text, subject = 'General', priority = 'normal') => {
+    const today = getTodayStr()
+    const { data, error } = await supabase
+      .from('dated_todos')
+      .insert({ text, date: today, subject, priority })
       .select()
+      .single()
 
-    if (error) {
-      console.error('Error adding todo:', error)
-      return
-    }
+    if (data) setTodos(prev => [...prev, data])
+  }
 
-    if (data) {
-      setTodos((prev) => [data[0], ...prev])
-    }
-  }, [])
-
-  const toggleTodo = useCallback(async (id) => {
-    const todo = todos.find((t) => t.id === id)
+  const toggleTodo = async (id) => {
+    const todo = todos.find(t => t.id === id)
     if (!todo) return
 
     const newCompleted = !todo.completed
 
     const { error } = await supabase
-      .from('todos')
+      .from('dated_todos')
       .update({ completed: newCompleted })
       .eq('id', id)
 
-    if (error) {
-      console.error('Error toggling todo:', error)
-      return
+    if (!error) {
+      setTodos(prev => prev.map(t =>
+        t.id === id ? { ...t, completed: newCompleted } : t
+      ))
+
+      if (newCompleted && onCompleteRef.current) {
+        onCompleteRef.current({ ...todo, completed: true })
+      }
     }
+  }
 
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: newCompleted } : t))
-    )
-
-    // Fire onComplete only when completing (not uncompleting)
-    if (newCompleted && onCompleteRef.current) {
-      onCompleteRef.current({ ...todo, completed: true })
-    }
-  }, [todos])
-
-  const deleteTodo = useCallback(async (id) => {
-    const { error } = await supabase
-      .from('todos')
+  const deleteTodo = async (id) => {
+    await supabase
+      .from('dated_todos')
       .delete()
       .eq('id', id)
 
-    if (error) {
-      console.error('Error deleting todo:', error)
-      return
-    }
-
-    setTodos((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    setTodos(prev => prev.filter(t => t.id !== id))
+  }
 
   return { todos, loading, addTodo, toggleTodo, deleteTodo }
 }
+
+export default useTodos

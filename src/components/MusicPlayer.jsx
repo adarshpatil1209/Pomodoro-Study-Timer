@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Music } from 'lucide-react'
 import './MusicPlayer.css'
@@ -50,6 +50,36 @@ export default function MusicPlayer() {
   const [activePreset, setActivePreset] = useState(null)
   const [customUrl, setCustomUrl] = useState('')
   const [currentId, setCurrentId] = useState(null)
+  
+  const panelRef = useRef(null)
+  const buttonRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen || isMinimized) return
+    const handleClickOutside = (e) => {
+      if (panelRef.current && 
+          !panelRef.current.contains(e.target) &&
+          buttonRef.current && 
+          !buttonRef.current.contains(e.target)) {
+        setIsOpen(false)
+        setIsMinimized(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen, isMinimized])
+
+  useEffect(() => {
+    if (!isOpen || isMinimized) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false)
+        setIsMinimized(false)
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen, isMinimized])
 
   const handlePreset = (preset) => {
     setActivePreset(preset.id)
@@ -92,6 +122,7 @@ export default function MusicPlayer() {
       <AnimatePresence>
         {!isOpen && (
           <motion.button
+            ref={buttonRef}
             className="music-pill"
             onClick={() => setIsOpen(true)}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -125,6 +156,7 @@ export default function MusicPlayer() {
       {/* Expanded panel — always mounted when isOpen, animated via height */}
       {isOpen && (
         <motion.div
+          ref={panelRef}
           className="music-panel"
           initial={{ opacity: 0, scale: 0.85, y: 20 }}
           animate={{

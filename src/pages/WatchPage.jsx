@@ -20,6 +20,12 @@ export default function WatchPage() {
   const [incomingSnap, setIncomingSnap] = useState(null)
   const [snapVisible, setSnapVisible] = useState(false)
   const [snapExpanded, setSnapExpanded] = useState(false)
+  
+  // Timer state
+  const [snapTimer, setSnapTimer] = useState(null)
+  const [snapCountdown, setSnapCountdown] = useState(0)
+  const [snapTimerRunning, setSnapTimerRunning] = useState(false)
+  const [flashVideo, setFlashVideo] = useState(false)
 
   // Refs
   const chatChannelRef = useRef(null)
@@ -271,6 +277,40 @@ export default function WatchPage() {
     }
     setSnapStream(null)
     setSnapPreviewOpen(false)
+    clearInterval(countdownRef.current)
+    setSnapTimerRunning(false)
+    setSnapCountdown(0)
+  }
+
+  const cancelSnapTimer = () => {
+    clearInterval(countdownRef.current)
+    setSnapTimerRunning(false)
+    setSnapCountdown(0)
+  }
+
+  const triggerSendSnap = () => {
+    if (snapTimer === null) {
+      sendSnap()
+    } else {
+      setSnapCountdown(snapTimer)
+      setSnapTimerRunning(true)
+      
+      countdownRef.current = setInterval(() => {
+        setSnapCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current)
+            setSnapTimerRunning(false)
+            setFlashVideo(true)
+            setTimeout(() => {
+              setFlashVideo(false)
+              sendSnap()
+            }, 150)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
   }
 
   const dismissIncoming = () => {
@@ -633,37 +673,88 @@ export default function WatchPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden' }}
             >
-              <video
-                ref={snapVideoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: '300px', height: '225px',
-                  borderRadius: '20px', objectFit: 'cover',
-                  transform: 'scaleX(-1)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  background: '#3D0408'
-                }}
-              />
+              <motion.div
+                animate={{ backgroundColor: flashVideo ? 'rgba(255,255,255,0.8)' : 'transparent' }}
+                transition={{ duration: 0.15 }}
+                style={{ position: 'relative', display: 'flex' }}
+              >
+                <video
+                  ref={snapVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: '300px', height: '225px',
+                    borderRadius: '20px', objectFit: 'cover',
+                    transform: 'scaleX(-1)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    background: '#3D0408',
+                    opacity: flashVideo ? 0.2 : 1
+                  }}
+                />
+              </motion.div>
+              
+              {snapTimerRunning && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <AnimatePresence mode="popLayout">
+                    <motion.div
+                      key={snapCountdown}
+                      initial={{ scale: 1.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      style={{ fontFamily: 'DM Mono', fontWeight: 300, fontSize: '80px', color: '#F5EFE6', opacity: 0.9, lineHeight: 1 }}
+                    >
+                      {snapCountdown}
+                    </motion.div>
+                  </AnimatePresence>
+                  <div style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: '16px', color: '#C8B89A', marginTop: '-10px' }}>
+                    pose! 📸
+                  </div>
+                  <button onClick={cancelSnapTimer} style={{ marginTop: '10px', background: 'transparent', border: 'none', color: '#9A7A6A', fontFamily: 'DM Sans', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              )}
             </motion.div>
 
-            {/* Send button */}
-            <motion.button
-              onClick={sendSnap}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              style={{
-                marginTop: '20px',
-                background: '#C8B89A', color: '#6B0A14',
-                border: 'none', borderRadius: '999px',
-                padding: '10px 28px', fontFamily: 'DM Sans',
-                fontSize: '14px', fontWeight: 600, cursor: 'pointer'
-              }}
-            >
-              📸 Send
-            </motion.button>
+            {!snapTimerRunning && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px' }}>
+                <div style={{ fontFamily: 'DM Sans', fontSize: '11px', color: '#9A7A6A', marginBottom: '8px' }}>Timer</div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  {[null, 3, 5, 10].map(val => (
+                    <button
+                      key={val || 'Off'}
+                      onClick={() => setSnapTimer(val)}
+                      style={{
+                        background: snapTimer === val ? '#C8B89A' : 'transparent',
+                        border: snapTimer === val ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '999px', padding: '4px 12px',
+                        color: snapTimer === val ? '#6B0A14' : '#9A7A6A',
+                        fontFamily: 'DM Sans', fontSize: '11px', cursor: 'pointer'
+                      }}
+                    >
+                      {val ? `${val}s` : 'Off'}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Send button */}
+                <motion.button
+                  onClick={triggerSendSnap}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  style={{
+                    background: '#C8B89A', color: '#6B0A14',
+                    border: 'none', borderRadius: '999px',
+                    padding: '10px 28px', fontFamily: 'DM Sans',
+                    fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  📸 Send
+                </motion.button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react'
 
 const SYSTEM_PROMPT = `You are a friendly and brilliant study assistant for a medical aspirant preparing for NEET. Your name is Suru AI. You help with Physics, Chemistry, Botany, and Zoology questions. Keep answers concise, clear, and use simple language. When explaining concepts, use examples. Add relevant emojis occasionally. If asked non-study questions, gently redirect to studying.`
 
@@ -45,6 +46,32 @@ export default function AIChat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  const panelRef = useRef(null)
+  const buttonRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClickOutside = (e) => {
+      if (panelRef.current && 
+          !panelRef.current.contains(e.target) &&
+          buttonRef.current && 
+          !buttonRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen])
 
   const askAI = async (question) => {
     if (!question.trim() || loading) return
@@ -110,6 +137,7 @@ export default function AIChat() {
     <>
       {/* AI Toggle Button */}
       <motion.button
+        ref={buttonRef}
         onClick={() => setIsOpen((prev) => !prev)}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.96 }}
@@ -138,6 +166,7 @@ export default function AIChat() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={panelRef}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
@@ -176,22 +205,19 @@ export default function AIChat() {
               >
                 🧠 Suru AI
               </span>
-              <button
+              <motion.button
                 onClick={() => setIsOpen(false)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#F5EFE6',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  width: '24px', height: '24px', borderRadius: '50%',
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.14)',
+                  color: '#C8B89A', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
                 }}
               >
-                ✕
-              </button>
+                <X size={12} />
+              </motion.button>
             </div>
 
             {/* Messages Area */}

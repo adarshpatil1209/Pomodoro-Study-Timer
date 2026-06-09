@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Maximize2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function CalendarTodos() {
@@ -13,6 +13,8 @@ export default function CalendarTodos() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const panelRef = useRef(null)
+  const buttonRef = useRef(null)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 500)
@@ -20,6 +22,31 @@ export default function CalendarTodos() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClickOutside = (e) => {
+      if (panelRef.current && 
+          !panelRef.current.contains(e.target) &&
+          buttonRef.current && 
+          !buttonRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen])
 
   const formatDate = (date) => {
     const y = date.getFullYear()
@@ -173,6 +200,7 @@ export default function CalendarTodos() {
     <>
       {/* Floating Trigger Button */}
       <motion.button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -202,6 +230,7 @@ export default function CalendarTodos() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={panelRef}
             initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
@@ -224,7 +253,41 @@ export default function CalendarTodos() {
               boxSizing: 'border-box'
             }}
           >
-            {/* Calendar Header */}
+            {/* Calendar Panel Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ fontFamily: 'DM Sans', fontSize: '11px', fontWeight: 700, color: '#9A7A6A', letterSpacing: '0.08em' }}>
+                📅 STUDY PLANNER
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    width: '24px', height: '24px', borderRadius: '50%',
+                    background: 'transparent', border: '1px solid rgba(255,255,255,0.14)',
+                    color: '#C8B89A', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                  }}
+                >
+                  <Maximize2 size={12} />
+                </motion.button>
+                <motion.button
+                  onClick={() => setIsOpen(false)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    width: '24px', height: '24px', borderRadius: '50%',
+                    background: 'transparent', border: '1px solid rgba(255,255,255,0.14)',
+                    color: '#C8B89A', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                  }}
+                >
+                  <X size={12} />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Calendar Month Navigation Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <button onClick={prevMonth} style={{ background: 'transparent', border: 'none', color: '#F5EFE6', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
               <div style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 600, fontSize: '18px', color: '#F5EFE6' }}>
