@@ -1,17 +1,28 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
-const getToday = () => new Date().toISOString().split('T')[0]
-
-const getLocalDateStr = () => {
+const getTodayStr = () => {
   const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
-const getDayIndex = () => {
-  // 0=Mon, 1=Tue, ..., 6=Sun
-  const day = new Date().getDay()
-  return day === 0 ? 6 : day - 1
+const getYesterdayStr = () => {
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const year = yesterday.getFullYear()
+  const month = String(yesterday.getMonth() + 1).padStart(2, '0')
+  const day = String(yesterday.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const normalizeDateStr = (dateVal) => {
+  if (!dateVal) return null
+  // Supabase can return "2026-05-31T00:00:00" or "2026-05-31"
+  // Always extract just YYYY-MM-DD
+  return String(dateVal).split('T')[0]
 }
 
 const parseWeekly = (raw) => {
@@ -55,27 +66,18 @@ export function useStats() {
           .eq('id', 1)
           .single()
 
-        if (error) {
-          console.error('Supabase error:', error)
-          // Even on error, stop loading — show app with defaults
-          setStats((prev) => prev || {
-            id: 1,
-            name: 'love',
-            display_name: 'love',
-            total_sessions: 0,
-            total_minutes: 0,
-            streak_days: 0,
-            last_study_date: null,
-            daily_goal: 8,
-            sessions_today: 0,
-            weekly_data: [0, 0, 0, 0, 0, 0, 0]
-          })
-        } else {
-          setStats(data)
+        if (error) throw error
+
+        // Normalize the date field immediately on fetch
+        const normalized = {
+          ...data,
+          last_study_date: normalizeDateStr(data.last_study_date),
+          weekly_data: parseWeekly(data.weekly_data)
         }
+
+        setStats(normalized)
       } catch (err) {
-        console.error('Fetch failed:', err)
-        // Fallback default so app never stays stuck
+        console.error('fetchStats error:', err)
         setStats((prev) => prev || {
           id: 1,
           name: 'love',
@@ -90,7 +92,7 @@ export function useStats() {
         })
       } finally {
         clearTimeout(timeout)
-        setLoading(false) // ALWAYS runs — skeleton always clears
+        setLoading(false)
       }
     }
 
@@ -121,29 +123,60 @@ export function useStats() {
   const addSession = useCallback(async (minutes) => {
     if (!stats) return
 
-    const today = getLocalDateStr()
-    const lastDate = stats.last_study_date
-    
-    // Calculate streak
-    const yd = new Date()
-    yd.setDate(yd.getDate() - 1)
-    const yesterday = `${yd.getFullYear()}-${String(yd.getMonth()+1).padStart(2,'0')}-${String(yd.getDate()).padStart(2,'0')}`
+    const today = getTodayStr()
+    const yesterday = getYesterdayStr()
+    const lastDate = normalizeDateStr(stats.last_study_date)
 
     let newStreak = stats.streak_days || 0
+    let newSessionsToday = stats.sessions_today || 0
 
+    // Streak logic
     if (!lastDate) {
+      // First ever session
       newStreak = 1
+      newSessionsToday = 1
     } else if (lastDate === today) {
-      newStreak = stats.streak_days  // same day no change
+      // Same day — streak unchanged
+      newStreak = stats.streak_days
+      newSessionsToday = (stats.sessions_today || 0) + 1
     } else if (lastDate === yesterday) {
+      // Consecutive day — increment streak
       newStreak = (stats.streak_days || 0) + 1
+      newSessionsToday = 1
     } else {
-      newStreak = 1  // streak broke
+      // Streak broke — restart
+      newStreak = 1
+      newSessionsToday = 1
     }
 
-    // Weekly data update
-    const dayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1
-    const currentWeekly = parseWeekly(stats.weekly_data)
+    // Weekly data
+    const dayIndex = new Date().getDay() === 0
+      ? 6
+      : new Date().getDay() - 1
+
+    const rawWeekly = stats.weekly_data
+    let currentWeekly = [0,0,0,0,0,0,0]
+
+    if (Array.isArray(rawWeekly)) {
+      currentWeekly = rawWeekly
+    } else if (typeof rawWeekly === 'string') {
+      try { currentWeekly = JSON.parse(rawWeekly) } catch {}
+    } else if (rawWeekly && typeof rawWeekly === 'object') {
+      currentWeekly = Object.values(rawWeekly)
+    }
+
+    // Reset weekly data if new week
+    const thisMonday = new Date()
+    thisMonday.setDate(
+      thisMonday.getDate() - (thisMonday.getDay() || 7) + 1
+    )
+    thisMonday.setHours(0,0,0,0)
+
+    const lastStudyDate = lastDate ? new Date(lastDate) : null
+    if (lastStudyDate && lastStudyDate < thisMonday) {
+      currentWeekly = [0,0,0,0,0,0,0]
+    }
+
     const newWeekly = [...currentWeekly]
     newWeekly[dayIndex] = (newWeekly[dayIndex] || 0) + 1
 
@@ -152,13 +185,11 @@ export function useStats() {
       total_minutes: (stats.total_minutes || 0) + minutes,
       streak_days: newStreak,
       last_study_date: today,
-      sessions_today: lastDate === today 
-        ? (stats.sessions_today || 0) + 1 
-        : 1,
+      sessions_today: newSessionsToday,
       weekly_data: newWeekly
     }
 
-    // Update local state immediately
+    // Update local state INSTANTLY
     setStats(prev => ({ ...prev, ...patch }))
 
     // Save to Supabase
@@ -167,7 +198,11 @@ export function useStats() {
       .update(patch)
       .eq('id', 1)
 
-    if (error) console.error('addSession error:', error)
+    if (error) {
+      console.error('addSession error:', error)
+      // Revert on error
+      setStats(prev => ({ ...prev, ...stats }))
+    }
   }, [stats])
 
   return { stats, loading, updateStats, addSession }
