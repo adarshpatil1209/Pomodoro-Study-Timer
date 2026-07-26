@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-export default function ChatWidget() {
+export default function ChatWidget({ roomId }) {
+  const currentRoomId = roomId || 'solo'
   const [chatOpen, setChatOpen] = useState(false)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -59,6 +60,7 @@ export default function ChatWidget() {
     const { data } = await supabase
       .from('messages')
       .select('*')
+      .eq('room_id', currentRoomId)
       .order('created_at', { ascending: true })
       .limit(50)
 
@@ -76,7 +78,7 @@ export default function ChatWidget() {
     fetchMessages()
 
     const channel = supabase
-      .channel('messages-changes-' + Date.now())
+      .channel(`messages-${currentRoomId}-` + Date.now())
       .on(
         'postgres_changes',
         {
@@ -135,7 +137,7 @@ export default function ChatWidget() {
     if (!chatInput.trim()) return
     const { error } = await supabase
       .from('messages')
-      .insert({ text: chatInput.trim(), from_role: 'her' })
+      .insert({ text: chatInput.trim(), from_role: 'her', room_id: currentRoomId })
     if (!error) setChatInput('')
   }
 

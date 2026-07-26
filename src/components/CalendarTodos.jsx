@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Maximize2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function CalendarTodos() {
+  const { user } = useAuth()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [todos, setTodos] = useState({})
@@ -56,10 +58,13 @@ export default function CalendarTodos() {
   }
 
   useEffect(() => {
+    if (!user) return
+
     const fetchTodos = async () => {
       const { data, error } = await supabase
         .from('dated_todos')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true })
       
       if (data) {
@@ -77,10 +82,10 @@ export default function CalendarTodos() {
     fetchTodos()
 
     const channel = supabase
-      .channel('dated-todos-changes-' + Date.now())
+      .channel(`dated-todos-${user.id}-` + Date.now())
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'dated_todos' },
+        { event: '*', schema: 'public', table: 'dated_todos', filter: `user_id=eq.${user.id}` },
         () => {
           fetchTodos()
         }
@@ -90,7 +95,7 @@ export default function CalendarTodos() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [user])
 
   const addTodo = async () => {
     if (!input.trim()) return
@@ -102,7 +107,8 @@ export default function CalendarTodos() {
         text: input.trim(),
         date: dateStr,
         subject,
-        priority
+        priority,
+        user_id: user.id
       })
       .select()
       .single()

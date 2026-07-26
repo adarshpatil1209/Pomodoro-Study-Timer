@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 export function useTodos({ onComplete } = {}) {
+  const { user } = useAuth()
   const [todos, setTodos] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -11,13 +13,14 @@ export function useTodos({ onComplete } = {}) {
   }, [onComplete])
 
   useEffect(() => {
-    fetchTodos()
-  }, [])
+    if (user) fetchTodos()
+  }, [user])
 
   const fetchTodos = async () => {
     const { data } = await supabase
       .from('todos')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: true })
     if (data) setTodos(data)
     setLoading(false)
@@ -26,7 +29,7 @@ export function useTodos({ onComplete } = {}) {
   const addTodo = async (text, subject = 'General', priority = 'normal') => {
     const { data } = await supabase
       .from('todos')
-      .insert({ text, subject, priority, completed: false })
+      .insert({ text, subject, priority, completed: false, user_id: user.id })
       .select()
       .single()
     if (data) setTodos(prev => [...prev, data])

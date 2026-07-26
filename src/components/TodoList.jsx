@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, Plus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import './TodoList.css'
 
 const getTodayStr = () => {
@@ -84,6 +85,7 @@ function TodoRow({ todo, onToggle, onDelete }) {
 }
 
 export default function TodoList({ todosHook, onTaskComplete }) {
+  const { user } = useAuth()
   const { todos, addTodo, toggleTodo, deleteTodo, bulkAddTodos } = todosHook
 
   const [text, setText] = useState('')
@@ -109,6 +111,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
       .select('*')
       .eq('date', today)
       .eq('completed', false)  // only incomplete tasks
+      .eq('user_id', user.id)
     
     if (!calendarTasks || calendarTasks.length === 0) {
       // Nothing to copy — show brief message
@@ -122,7 +125,8 @@ export default function TodoList({ todosHook, onTaskComplete }) {
       text: t.text,
       subject: t.subject,
       priority: t.priority,
-      completed: false
+      completed: false,
+      user_id: user.id
     }))
     
     const { data: inserted } = await supabase

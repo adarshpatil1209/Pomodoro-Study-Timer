@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 const PRESETS = {
   '25/5':  { focus: 1500, shortBreak: 300 },
@@ -6,7 +7,6 @@ const PRESETS = {
 }
 
 const LONG_BREAK   = 1200  // 20 minutes
-const STORAGE_KEY  = 'pomo-timer-state'
 
 function playSineFallback() {
   try {
@@ -38,17 +38,19 @@ function playBell() {
   })
 }
 
-function saveState(state) {
+function saveState(state, storageKey) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }))
+    localStorage.setItem(storageKey, JSON.stringify({ ...state, savedAt: Date.now() }))
   } catch { /* storage full or unavailable — silently ignore */ }
 }
 
-function clearState() {
-  try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+function clearState(storageKey) {
+  try { localStorage.removeItem(storageKey) } catch { /* ignore */ }
 }
 
 export function useTimer({ onSessionComplete } = {}) {
+  const { user } = useAuth()
+  const STORAGE_KEY = `pomo-timer-${user?.id || 'anon'}`
   const [preset,       setPresetState]  = useState('25/5')
   const [customFocus,  setCustomFocus]  = useState(25)
   const [customBreak,  setCustomBreak]  = useState(5)
@@ -101,7 +103,7 @@ export function useTimer({ onSessionComplete } = {}) {
           setIsRunning(true)   // auto-resume
         } else {
           // Session finished while away — clear and start fresh
-          clearState()
+          clearState(STORAGE_KEY)
         }
       } else {
         // Timer was paused — restore paused state exactly
@@ -112,7 +114,7 @@ export function useTimer({ onSessionComplete } = {}) {
         setIsRunning(false)
       }
     } catch {
-      clearState()
+      clearState(STORAGE_KEY)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -125,7 +127,7 @@ export function useTimer({ onSessionComplete } = {}) {
         const next = prev - 1
 
         // Persist on every tick so refresh always has current time
-        saveState({ timeLeft: next, mode, sessionCount, preset, isRunning: true })
+        saveState({ timeLeft: next, mode, sessionCount, preset, isRunning: true }, STORAGE_KEY)
 
         if (next <= 0) {
           clearInterval(interval)
@@ -144,7 +146,7 @@ export function useTimer({ onSessionComplete } = {}) {
     if (!isRunning)     return
 
     setIsRunning(false)
-    clearState()   // clear saved state on session complete
+    clearState(STORAGE_KEY)   // clear saved state on session complete
     playBell()
 
     if (mode === 'focus') {
@@ -182,20 +184,20 @@ export function useTimer({ onSessionComplete } = {}) {
     setIsRunning(false)
     // Capture current timeLeft via functional update to avoid stale closure
     setTimeLeft((tl) => {
-      saveState({ timeLeft: tl, mode, sessionCount, preset, isRunning: false })
+      saveState({ timeLeft: tl, mode, sessionCount, preset, isRunning: false }, STORAGE_KEY)
       return tl
     })
   }, [mode, sessionCount, preset])
 
   const reset = useCallback(() => {
-    clearState()
+    clearState(STORAGE_KEY)
     setIsRunning(false)
     setTimeLeft(getDurationForMode(mode))
   }, [getDurationForMode, mode])
 
   const skip = useCallback(() => {
     setIsRunning(false)
-    clearState()
+    clearState(STORAGE_KEY)
 
     if (mode === 'focus') {
       const nextCount = sessionCount
@@ -217,7 +219,7 @@ export function useTimer({ onSessionComplete } = {}) {
     setIsRunning(false)
     setMode('focus')
     setSessionCount(0)
-    clearState()
+    clearState(STORAGE_KEY)
 
     if (p === 'custom') {
       setTimeLeft(customFocus * 60)
@@ -233,7 +235,7 @@ export function useTimer({ onSessionComplete } = {}) {
       setIsRunning(false)
       setMode('focus')
       setTimeLeft(focusMin * 60)
-      clearState()
+      clearState(STORAGE_KEY)
     }
   }, [preset])
 

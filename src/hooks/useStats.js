@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 const getTodayStr = () => {
   const now = new Date()
@@ -38,16 +39,17 @@ const parseWeekly = (raw) => {
 }
 
 export function useStats() {
+  const { user } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) { setLoading(false); return }
+
     const timeout = setTimeout(() => {
       setLoading(false)
       setStats((prev) => prev || {
-        id: 1,
-        name: 'love',
-        display_name: 'love',
+        user_id: user.id,
         total_sessions: 0,
         total_minutes: 0,
         streak_days: 0,
@@ -63,7 +65,7 @@ export function useStats() {
         const { data, error } = await supabase
           .from('user_stats')
           .select('*')
-          .eq('id', 1)
+          .eq('user_id', user.id)
           .single()
 
         if (error) throw error
@@ -79,9 +81,7 @@ export function useStats() {
       } catch (err) {
         console.error('fetchStats error:', err)
         setStats((prev) => prev || {
-          id: 1,
-          name: 'love',
-          display_name: 'love',
+          user_id: user.id,
           total_sessions: 0,
           total_minutes: 0,
           streak_days: 0,
@@ -99,7 +99,7 @@ export function useStats() {
     fetchStats()
 
     return () => clearTimeout(timeout)
-  }, [])
+  }, [user])
 
   const updateStats = useCallback(async (patch) => {
     // Step 1: update local state immediately using functional update
@@ -109,7 +109,7 @@ export function useStats() {
     const { error } = await supabase
       .from('user_stats')
       .update(patch)
-      .eq('id', 1)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Update error:', error)
@@ -118,7 +118,7 @@ export function useStats() {
     }
     // DO NOT call fetchStats() or setStats(data) after update
     // DO NOT re-fetch after saving — causes the flicker
-  }, [stats])
+  }, [stats, user])
 
   const addSession = useCallback(async (minutes) => {
     if (!stats) return
@@ -196,14 +196,14 @@ export function useStats() {
     const { error } = await supabase
       .from('user_stats')
       .update(patch)
-      .eq('id', 1)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('addSession error:', error)
       // Revert on error
       setStats(prev => ({ ...prev, ...stats }))
     }
-  }, [stats])
+  }, [stats, user])
 
   return { stats, loading, updateStats, addSession }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
-export default function StudyCamera({ isOpen, onClose }) {
+export default function StudyCamera({ isOpen, onClose, roomId }) {
   const [snapPreviewOpen, setSnapPreviewOpen] = useState(false)
   const [snapStream, setSnapStream] = useState(null)
   const [incomingSnap, setIncomingSnap] = useState(null)
@@ -18,9 +18,11 @@ export default function StudyCamera({ isOpen, onClose }) {
   const snapChannelRef = useRef(null)
   const snapVideoRef = useRef(null)
 
+  const currentRoomId = roomId || 'solo'
+
   // Subscribe to snap channel on mount
   useEffect(() => {
-    const channel = supabase.channel('instant-snap', {
+    const channel = supabase.channel(`snaps-${currentRoomId}`, {
       config: { broadcast: { self: false } }
     })
     snapChannelRef.current = channel
