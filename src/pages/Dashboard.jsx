@@ -48,7 +48,7 @@ const Dashboard = () => {
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.logo}>FocusPair ✨</h1>
+          <h1 style={styles.logo}>PomoXP ✨</h1>
           <div style={styles.headerRight}>
             <span style={styles.profileName}>{profile?.name}</span>
             <motion.button
