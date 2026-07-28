@@ -42,7 +42,7 @@ const AuthPage = () => {
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logoSection}>
-          <h1 style={styles.logo}>DR.SURU 🩺</h1>
+          <h1 style={styles.logo}>FocusPair ✨</h1>
           <p style={styles.tagline}>Study smarter. Together.</p>
         </div>
 

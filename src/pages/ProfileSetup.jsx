@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
-const EXAM_OPTIONS = ['NEET', 'JEE', 'UPSC', 'CAT', 'BAR', 'Custom']
+const GOAL_OPTIONS = ['Exam', 'Work Project', 'Personal Goal', 'Skill Learning', 'Other']
 
 const ProfileSetup = () => {
   const { user, updateProfile } = useAuth()
@@ -13,10 +13,10 @@ const ProfileSetup = () => {
   const [examName, setExamName] = useState('')
   const [customExam, setCustomExam] = useState('')
   const [examDate, setExamDate] = useState('')
-  const [dailyGoal, setDailyGoal] = useState(8)
+  const [dailyGoal, setDailyGoal] = useState(1)
   const [loading, setLoading] = useState(false)
 
-  const selectedExam = examName === 'Custom' ? customExam : examName
+  const selectedExam = examName === 'Other' ? customExam : examName
 
   const handleSave = async () => {
     setLoading(true)
@@ -38,10 +38,8 @@ const ProfileSetup = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        {/* Title */}
-        <h1 style={styles.title}>Set up your study profile 🎯</h1>
+        <h1 style={styles.title}>Set up your profile</h1>
 
-        {/* Display Name */}
         <label style={styles.label}>Display name</label>
         <input
           type="text"
@@ -53,10 +51,9 @@ const ProfileSetup = () => {
           onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.14)' }}
         />
 
-        {/* Exam Selector */}
-        <label style={styles.label}>What are you studying for?</label>
+        <label style={styles.label}>What are you working towards?</label>
         <div style={styles.pillContainer}>
-          {EXAM_OPTIONS.map((exam) => (
+          {GOAL_OPTIONS.map((exam) => (
             <motion.button
               key={exam}
               type="button"
@@ -73,12 +70,12 @@ const ProfileSetup = () => {
           ))}
         </div>
 
-        {examName === 'Custom' && (
+        {examName === 'Other' && (
           <motion.input
             type="text"
             value={customExam}
             onChange={(e) => setCustomExam(e.target.value)}
-            placeholder="Enter your exam name"
+            placeholder="Enter your goal"
             style={{ ...styles.input, marginTop: 8 }}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -88,8 +85,7 @@ const ProfileSetup = () => {
           />
         )}
 
-        {/* Exam Date */}
-        <label style={styles.label}>When is your exam?</label>
+        <label style={styles.label}>Target date (optional)</label>
         <input
           type="date"
           value={examDate}
@@ -99,7 +95,6 @@ const ProfileSetup = () => {
           onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.14)' }}
         />
 
-        {/* Daily Goal */}
         <label style={styles.label}>Daily session goal</label>
         <div style={styles.goalRow}>
           <motion.button
@@ -124,7 +119,6 @@ const ProfileSetup = () => {
           <span style={styles.goalUnit}>sessions / day</span>
         </div>
 
-        {/* Save */}
         <motion.button
           style={styles.saveBtn}
           whileHover={{ scale: 1.02 }}
@@ -133,7 +127,7 @@ const ProfileSetup = () => {
           disabled={loading || !selectedExam}
           type="button"
         >
-          {loading ? '...' : "Let's go 🚀"}
+          {loading ? '...' : "Let's go"}
         </motion.button>
       </motion.div>
     </div>
@@ -208,7 +202,7 @@ const styles = {
     transition: 'all 0.2s',
   },
   pillActive: {
-    background: 'linear-gradient(135deg, #B03030, #8B1A1A)',
+    background: '#B03030',
     border: '1px solid rgba(200,184,154,0.30)',
     color: '#F5EFE6',
   },
@@ -248,7 +242,7 @@ const styles = {
   },
   saveBtn: {
     width: '100%',
-    background: 'linear-gradient(135deg, #B03030, #8B1A1A)',
+    background: '#B03030',
     color: '#F5EFE6',
     border: 'none',
     borderRadius: 14,

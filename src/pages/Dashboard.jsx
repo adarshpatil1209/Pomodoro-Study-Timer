@@ -1,11 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings as SettingsIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import useRoom from '../hooks/useRoom'
 
-const Dashboard = ({ onModeSelect }) => {
+const Dashboard = () => {
   const navigate = useNavigate()
   const [roomCode, setRoomCode] = useState('')
   const [copied, setCopied] = useState(false)
@@ -29,41 +28,34 @@ const Dashboard = ({ onModeSelect }) => {
     }
   }
 
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/auth')
+  }
+
   const daysToExam = profile?.exam_date
     ? Math.ceil((new Date(profile.exam_date) - new Date()) / (1000 * 60 * 60 * 24))
     : null
 
-  // Automatically route to study room when status is active (e.g. host sees guest join, or guest successfully joins)
   useEffect(() => {
-    if (room && room.status === 'active' && onModeSelect) {
-      onModeSelect('room', room)
+    if (room && room.status === 'active') {
+      navigate(`/room/${room.id}`)
     }
-  }, [room, onModeSelect])
-
+  }, [room, navigate])
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.logo}>DR.SURU 🩺</h1>
+          <h1 style={styles.logo}>FocusPair ✨</h1>
           <div style={styles.headerRight}>
             <span style={styles.profileName}>{profile?.name}</span>
-            <motion.button
-              style={styles.settingsBtn}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/settings')}
-              type="button"
-              title="Settings"
-            >
-              <SettingsIcon size={16} />
-            </motion.button>
             <motion.button
               style={styles.signOutBtn}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={signOut}
+              onClick={handleSignOut}
               type="button"
             >
               Sign out
@@ -73,7 +65,7 @@ const Dashboard = ({ onModeSelect }) => {
 
         {/* Greeting */}
         <h2 style={styles.greeting}>
-          Hey {profile?.name?.split(' ')[0]}, ready to study? 😋
+          Hey {profile?.name} 👋
         </h2>
 
         {/* Two Cards */}
@@ -93,7 +85,7 @@ const Dashboard = ({ onModeSelect }) => {
               style={styles.primaryBtn}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => onModeSelect && onModeSelect('solo', null)}
+              onClick={() => navigate('/study')}
               type="button"
             >
               Start Solo
@@ -112,7 +104,6 @@ const Dashboard = ({ onModeSelect }) => {
               Study with a partner. Chat, snaps, and shared sessions.
             </p>
 
-            {/* Created Room Code Display */}
             {room ? (
               <div style={styles.codeDisplay}>
                 <div style={styles.codeRow}>
@@ -140,7 +131,6 @@ const Dashboard = ({ onModeSelect }) => {
               </div>
             ) : (
               <div style={styles.roomOptions}>
-                {/* Create Room */}
                 <motion.button
                   style={styles.primaryBtn}
                   whileHover={{ scale: 1.02 }}
@@ -152,20 +142,18 @@ const Dashboard = ({ onModeSelect }) => {
                   {roomLoading ? '...' : 'Create Room'}
                 </motion.button>
 
-                {/* Divider */}
                 <div style={styles.miniDivider}>
                   <div style={styles.miniDividerLine} />
                   <span style={styles.miniDividerText}>or</span>
                   <div style={styles.miniDividerLine} />
                 </div>
 
-                {/* Join Room */}
                 <div style={styles.joinRow}>
                   <input
                     type="text"
                     value={roomCode}
                     onChange={(e) => setRoomCode(e.target.value.toUpperCase().slice(0, 6))}
-                    placeholder="Enter 6-digit code"
+                    placeholder="Enter room code"
                     maxLength={6}
                     style={styles.codeInput}
                     onFocus={(e) => { e.target.style.borderColor = 'rgba(200,184,154,0.50)' }}
@@ -190,12 +178,10 @@ const Dashboard = ({ onModeSelect }) => {
               </div>
             )}
 
-            {/* Error */}
             {error && <p style={styles.error}>{error}</p>}
           </motion.div>
         </div>
 
-        {/* Exam Countdown */}
         {daysToExam !== null && daysToExam > 0 && (
           <motion.div
             style={styles.examPill}
@@ -203,7 +189,7 @@ const Dashboard = ({ onModeSelect }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            {daysToExam} days to {profile.exam_name} 🩺
+            {daysToExam} days to {profile.exam_name} ✨
           </motion.div>
         )}
       </div>
@@ -251,26 +237,13 @@ const styles = {
     color: '#C8B89A',
     fontWeight: 500,
   },
-  settingsBtn: {
-    background: 'none',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8,
-    width: 28,
-    height: 28,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#9A7A6A',
-    cursor: 'pointer',
-    padding: 0,
-  },
   signOutBtn: {
-    background: 'none',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8,
+    background: 'transparent',
+    border: '1px solid rgba(255,255,255,0.14)',
+    borderRadius: 999,
     padding: '5px 12px',
     fontFamily: "'DM Sans', sans-serif",
-    fontSize: 11,
+    fontSize: 12,
     color: '#9A7A6A',
     cursor: 'pointer',
   },
@@ -317,7 +290,7 @@ const styles = {
   },
   primaryBtn: {
     width: '100%',
-    background: 'linear-gradient(135deg, #B03030, #8B1A1A)',
+    background: '#B03030',
     color: '#F5EFE6',
     border: 'none',
     borderRadius: 14,
@@ -424,16 +397,5 @@ const styles = {
     alignItems: 'center',
   },
 }
-
-// Responsive: stack cards on mobile
-const styleSheet = document.createElement('style')
-styleSheet.textContent = `
-  @media (max-width: 520px) {
-    .dashboard-card-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-`
-document.head.appendChild(styleSheet)
 
 export default Dashboard

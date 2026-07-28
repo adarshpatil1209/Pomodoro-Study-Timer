@@ -50,7 +50,7 @@ function clearState(storageKey) {
 
 export function useTimer({ onSessionComplete } = {}) {
   const { user } = useAuth()
-  const STORAGE_KEY = `pomo-timer-${user?.id || 'anon'}`
+  const STORAGE_KEY = user?.id ? 'pomo-timer-' + user.id : 'pomo-timer'
   const [preset,       setPresetState]  = useState('25/5')
   const [customFocus,  setCustomFocus]  = useState(25)
   const [customBreak,  setCustomBreak]  = useState(5)
