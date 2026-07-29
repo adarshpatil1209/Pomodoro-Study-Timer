@@ -29,7 +29,7 @@ export default function ChatWidget({ roomId }) {
     let show = true
     notifInterval.current = setInterval(() => {
       document.title = show
-        ? `(${count}) New message 💬`
+        ? `(${count}) New message `
         : originalTitle.current
       show = !show
     }, 1000)
@@ -211,7 +211,7 @@ export default function ChatWidget({ roomId }) {
               fontSize: '16px', color: '#F5EFE6', cursor: 'pointer'
             }}
           >
-            💬 {toastMsg}
+             {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>
@@ -235,7 +235,7 @@ export default function ChatWidget({ roomId }) {
           justifyContent: 'center', fontSize: '16px'
         }}
       >
-        💬
+        
         {unreadCount > 0 && !chatOpen && (
           <motion.div
             initial={{ scale: 0 }}
@@ -311,7 +311,7 @@ export default function ChatWidget({ roomId }) {
                         fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
                         color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
                       }}
-                    >Yes 🗑️</motion.button>
+                    >Yes </motion.button>
                     <motion.button
                       onClick={() => setConfirmClear(false)}
                       whileHover={{ scale: 1.05 }}
@@ -334,7 +334,7 @@ export default function ChatWidget({ roomId }) {
                     cursor: 'pointer', fontSize: '14px', padding: '4px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}
-                >✕</button>
+                ></button>
               </div>
             </div>
 
@@ -395,7 +395,7 @@ export default function ChatWidget({ roomId }) {
                       fontSize: '14px', color: '#9A7A6A'
                     }}
                   >
-                    Messages cleared 🔥
+                    Messages cleared 
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -407,7 +407,7 @@ export default function ChatWidget({ roomId }) {
                   fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
                   color: '#9A7A6A'
                 }}>
-                  <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet 🌸</div>
+                  <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet </div>
                 </div>
               )}
 

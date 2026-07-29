@@ -229,7 +229,7 @@ export default function CalendarTodos() {
           gap: '8px'
         }}
       >
-        📅 Planner
+         Planner
       </motion.button>
 
       {/* Floating Calendar Panel */}
@@ -262,7 +262,7 @@ export default function CalendarTodos() {
             {/* Calendar Panel Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ fontFamily: 'DM Sans', fontSize: '11px', fontWeight: 700, color: '#9A7A6A', letterSpacing: '0.08em' }}>
-                📅 STUDY PLANNER
+                 STUDY PLANNER
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <motion.button
@@ -407,7 +407,7 @@ export default function CalendarTodos() {
                             padding: 0, flexShrink: 0
                           }}
                         >
-                          {todo.completed && <span style={{ color: '#3D0408', fontSize: '12px' }}>✓</span>}
+                          {todo.completed && <span style={{ color: '#3D0408', fontSize: '12px' }}></span>}
                         </button>
                         
                         <div style={{
@@ -509,7 +509,7 @@ export default function CalendarTodos() {
                       display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', marginLeft: '8px'
                     }}
                   >
-                    ⚠️ {priority}
+                     {priority}
                   </button>
                 </div>
               </div>

@@ -194,7 +194,11 @@ export default function MainApp() {
 
   // Todo complete handler
   const handleTaskComplete = useCallback(() => {
+<<<<<<< HEAD
     setToastMsg("Proud of you, let's gooo!! 🎉")
+=======
+    setToastMsg('Amazing work! Keep going! ')
+>>>>>>> 034adc0 (new)
     setToastVisible(true)
   }, [])
 
@@ -267,7 +271,7 @@ export default function MainApp() {
 
   const handleLeaveRoom = async () => {
     await leaveRoom()
-    navigate('/')
+    navigate('/app')
   }
 
   return (
@@ -344,8 +348,13 @@ export default function MainApp() {
         }}
       >
         <div className="app-header-left">
+<<<<<<< HEAD
           <span className="app-logo font-display">Dr.Suru</span>
           <span className="app-logo-icon">🩺</span>
+=======
+          <span className="app-logo font-display">PomoXP</span>
+          <span className="app-logo-icon"></span>
+>>>>>>> 034adc0 (new)
         </div>
 
         <motion.div
@@ -381,7 +390,11 @@ export default function MainApp() {
                 display: 'inline-block',
                 boxShadow: partnerOnline ? '0 0 6px rgba(76,175,80,0.5)' : 'none',
               }} />
+<<<<<<< HEAD
               Studying with {partner?.name || room?.host?.name || 'partner'}
+=======
+              With {partner?.name || room?.host?.name || 'partner'} 
+>>>>>>> 034adc0 (new)
             </div>
           )}
         </motion.div>
@@ -392,7 +405,7 @@ export default function MainApp() {
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            🔥 {streakDays} days
+             {streakDays} days
           </motion.span>
 
           <motion.button

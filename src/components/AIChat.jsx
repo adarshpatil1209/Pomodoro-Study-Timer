@@ -124,7 +124,7 @@ export default function AIChat() {
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I could not connect. Try again! 😔',
+          content: 'Sorry, I could not connect. Try again! ',
           id: Date.now() + 1,
         },
       ])
@@ -159,7 +159,7 @@ export default function AIChat() {
           gap: '4px',
         }}
       >
-        🧠 Ask AI
+         Ask AI
       </motion.button>
 
       {/* AI Panel */}
@@ -203,7 +203,11 @@ export default function AIChat() {
                   color: '#F5EFE6',
                 }}
               >
+<<<<<<< HEAD
                 🧠 Suru AI
+=======
+                 PomoXP AI
+>>>>>>> 034adc0 (new)
               </span>
               <motion.button
                 onClick={() => setIsOpen(false)}
@@ -252,6 +256,7 @@ export default function AIChat() {
                       lineHeight: '1.5',
                     }}
                   >
+<<<<<<< HEAD
                     Hi! I'm Suru AI 🤖 Ask me anything about Physics,
                     Chemistry, Botany or Zoology and slayy! 💅
                   </p>
@@ -265,6 +270,11 @@ export default function AIChat() {
                       justifyContent: 'center',
                     }}
                   >
+=======
+                    Hi! I'm PomoXP AI. Ask me anything about your tasks, studies, work, or goals.
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+>>>>>>> 034adc0 (new)
                     {QUICK_QUESTIONS.map((q) => (
                       <motion.button
                         key={q}

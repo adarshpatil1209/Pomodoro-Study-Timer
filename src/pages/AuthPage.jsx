@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -10,6 +11,7 @@ const AuthPage = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const navigate = useNavigate()
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
 
   const handleSubmit = async () => {
@@ -17,17 +19,26 @@ const AuthPage = () => {
     setLoading(true)
 
     if (mode === 'login') {
-      const { error } = await signInWithEmail(email, password)
-      if (error) setError(error.message)
+      const { data, error } = await signInWithEmail(email, password)
+      if (error) {
+        setError(error.message)
+      } else if (data?.user) {
+        navigate('/app')
+      }
     } else {
       if (!name.trim()) {
         setError('Name is required')
         setLoading(false)
         return
       }
-      const { error } = await signUpWithEmail(email, password, name)
-      if (error) setError(error.message)
-      else setError('Check your email to confirm signup!')
+      const { data, error } = await signUpWithEmail(email, password, name)
+      if (error) {
+        setError(error.message)
+      } else if (data?.user) {
+        navigate('/app')
+      } else {
+        setError('Check your email to confirm signup!')
+      }
     }
     setLoading(false)
   }

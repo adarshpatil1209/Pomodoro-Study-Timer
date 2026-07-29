@@ -71,32 +71,36 @@ export default function EndOfDayModal({ stats, visible, onClose }) {
           >
             {/* Heading */}
             <h2 className="eod-heading font-display">
+<<<<<<< HEAD
               Today was beautiful, {name} 🌸
+=======
+              Today was beautiful, {name} 
+>>>>>>> 034adc0 (new)
             </h2>
 
             {/* Stats summary */}
             <div className="eod-stats">
               <div className="eod-stat-row">
-                <span className="eod-stat-emoji">🍅</span>
+                <span className="eod-stat-emoji"></span>
                 <span className="eod-stat-text">
                   <strong className="font-mono">{sessionsToday}</strong> sessions completed
                 </span>
               </div>
               <div className="eod-stat-row">
-                <span className="eod-stat-emoji">⏱</span>
+                <span className="eod-stat-emoji"></span>
                 <span className="eod-stat-text">
                   <strong className="font-mono">{formatHours(totalMinutes)}</strong> studied
                 </span>
               </div>
               <div className="eod-stat-row">
-                <span className="eod-stat-emoji">🔥</span>
+                <span className="eod-stat-emoji"></span>
                 <span className="eod-stat-text">
                   <strong className="font-mono">{streakDays}</strong> day streak
                 </span>
               </div>
               {goalHit && (
                 <div className="eod-stat-row eod-stat-row--goal">
-                  <span className="eod-stat-emoji">🎯</span>
+                  <span className="eod-stat-emoji"></span>
                   <span className="eod-stat-text eod-goal-text">Daily goal crushed!</span>
                 </div>
               )}
@@ -107,7 +111,11 @@ export default function EndOfDayModal({ stats, visible, onClose }) {
 
             {/* Close button */}
             <button className="btn-primary eod-close-btn" onClick={onClose}>
+<<<<<<< HEAD
               Wrap up for today 🌙
+=======
+              Wrap up for today 
+>>>>>>> 034adc0 (new)
             </button>
           </motion.div>
         </motion.div>

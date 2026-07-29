@@ -154,7 +154,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
         }}
       >
-        📷 Snap
+         Snap
       </motion.button>
 
       {/* Snap preview modal */}
@@ -182,7 +182,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
                 color: '#F5EFE6', fontSize: '14px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
-            >✕</button>
+            ></button>
 
             {/* Video preview */}
             <motion.div
@@ -228,7 +228,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
                     </motion.div>
                   </AnimatePresence>
                   <div style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: '16px', color: '#C8B89A', marginTop: '-10px' }}>
-                    pose! 📸
+                    pose! 
                   </div>
                   <button onClick={cancelSnapTimer} style={{ marginTop: '10px', background: 'transparent', border: 'none', color: '#9A7A6A', fontFamily: 'DM Sans', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
                 </div>
@@ -268,7 +268,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
                     fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                   }}
                 >
-                  📸 Send
+                   Send
                 </motion.button>
               </div>
             )}
@@ -329,7 +329,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
-              >✕</button>
+              ></button>
               <div style={{
                 textAlign: 'center',
                 marginTop: '6px',
@@ -395,7 +395,7 @@ export function StudyCameraToggle({ isOn, onToggle }) {
       title={isOn ? 'Close camera' : 'Open study camera'}
       aria-label="Toggle study camera"
     >
-      📷
+      
     </button>
   )
 }

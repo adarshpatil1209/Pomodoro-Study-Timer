@@ -27,7 +27,7 @@ const ProfileSetup = () => {
       daily_goal: dailyGoal,
     })
     setLoading(false)
-    navigate('/')
+    navigate('/app')
   }
 
   return (
@@ -38,7 +38,11 @@ const ProfileSetup = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
+<<<<<<< HEAD
         <h1 style={styles.title}>Set up your profile</h1>
+=======
+        <h1 style={styles.title}>Set up your study profile </h1>
+>>>>>>> 034adc0 (new)
 
         <label style={styles.label}>Display name</label>
         <input

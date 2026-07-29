@@ -11,8 +11,13 @@ export default function SessionBanner({ type, visible, onHide }) {
 
   const message =
     type === 'break'
+<<<<<<< HEAD
       ? '✨ Break done! Back to it.'
       : '🍅 Session complete! Take a break, you earned it.'
+=======
+      ? ' Break over! Ready for another session?'
+      : ' Focus session complete! Time for a break.'
+>>>>>>> 034adc0 (new)
 
   return (
     <AnimatePresence>

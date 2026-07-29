@@ -40,7 +40,7 @@ export default function WatchPage() {
     let show = true
     notifInterval.current = setInterval(() => {
       document.title = show
-        ? `(${count}) New message 💬`
+        ? `(${count}) New message `
         : originalTitle.current
       show = !show
     }, 1000)
@@ -348,7 +348,11 @@ export default function WatchPage() {
             fontFamily: 'Cormorant Garamond, serif', fontWeight: 700,
             textTransform: 'uppercase', fontSize: '28px', color: '#C8B89A',
             margin: 0, letterSpacing: '0.05em'
+<<<<<<< HEAD
           }}>DR.SURU 🩺</h1>
+=======
+          }}>PomoXP </h1>
+>>>>>>> 034adc0 (new)
           <p style={{
             fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
             fontSize: '16px', color: '#F5EFE6', margin: 0, opacity: 0.8
@@ -407,7 +411,11 @@ export default function WatchPage() {
         <h1 style={{
           fontFamily: 'Cormorant Garamond, serif', fontWeight: 700,
           fontSize: '24px', color: '#C8B89A', margin: 0
+<<<<<<< HEAD
         }}>DR.SURU 🩺</h1>
+=======
+        }}>PomoXP </h1>
+>>>>>>> 034adc0 (new)
       </div>
 
       {/* Main Grid Layout */}
@@ -434,7 +442,7 @@ export default function WatchPage() {
               padding: '20px'
             }}
           >
-            Send a snap to see each other 📷
+            Send a snap to see each other 
           </motion.div>
         </div>
 
@@ -492,7 +500,7 @@ export default function WatchPage() {
                     fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
                     color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
                   }}
-                >Yes 🗑️</motion.button>
+                >Yes </motion.button>
                 <motion.button
                   onClick={() => setConfirmClear(false)}
                   whileHover={{ scale: 1.05 }}
@@ -574,7 +582,7 @@ export default function WatchPage() {
                     fontSize: '14px', color: '#9A7A6A'
                   }}
                 >
-                  Messages cleared 🔥
+                  Messages cleared 
                 </motion.div>
               )}
             </AnimatePresence>
@@ -586,7 +594,7 @@ export default function WatchPage() {
                 fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
                 color: '#9A7A6A'
               }}>
-                <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet 🌸</div>
+                <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet </div>
               </div>
             )}
 
@@ -635,7 +643,7 @@ export default function WatchPage() {
               cursor: 'pointer'
             }}
           >
-            📷 Snap her
+             Snap her
           </motion.button>
         </div>
       </div>
@@ -665,7 +673,7 @@ export default function WatchPage() {
                 color: '#F5EFE6', fontSize: '14px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}
-            >✕</button>
+            ></button>
 
             {/* Video preview */}
             <motion.div
@@ -711,7 +719,7 @@ export default function WatchPage() {
                     </motion.div>
                   </AnimatePresence>
                   <div style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: '16px', color: '#C8B89A', marginTop: '-10px' }}>
-                    pose! 📸
+                    pose! 
                   </div>
                   <button onClick={cancelSnapTimer} style={{ marginTop: '10px', background: 'transparent', border: 'none', color: '#9A7A6A', fontFamily: 'DM Sans', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
                 </div>
@@ -751,7 +759,7 @@ export default function WatchPage() {
                     fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                   }}
                 >
-                  📸 Send
+                   Send
                 </motion.button>
               </div>
             )}
@@ -812,7 +820,7 @@ export default function WatchPage() {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
-              >✕</button>
+              ></button>
               <div style={{
                 textAlign: 'center',
                 marginTop: '6px',

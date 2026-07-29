@@ -63,10 +63,14 @@ const Dashboard = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Greeting */}
         <h2 style={styles.greeting}>
           Hey {profile?.name} 👋
         </h2>
+=======
+        <h2 style={styles.greeting}>Hey {profile?.name || 'User'} </h2>
+>>>>>>> 034adc0 (new)
 
         {/* Two Cards */}
         <div style={styles.cardGrid}>
@@ -76,7 +80,7 @@ const Dashboard = () => {
             whileHover={{ y: -4 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            <span style={styles.cardIcon}>🎯</span>
+            <span style={styles.cardIcon}></span>
             <h3 style={styles.cardTitle}>Solo Study</h3>
             <p style={styles.cardDesc}>
               Focus on your own. Timer, todos, stats and AI assistant.
@@ -98,7 +102,7 @@ const Dashboard = () => {
             whileHover={{ y: -4 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            <span style={styles.cardIcon}>👥</span>
+            <span style={styles.cardIcon}></span>
             <h3 style={styles.cardTitle}>Study Room</h3>
             <p style={styles.cardDesc}>
               Study with a partner. Chat, snaps, and shared sessions.
@@ -189,7 +193,11 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
+<<<<<<< HEAD
             {daysToExam} days to {profile.exam_name} ✨
+=======
+            {daysToExam} days to {profile?.exam_name || 'Goal'} 
+>>>>>>> 034adc0 (new)
           </motion.div>
         )}
       </div>

@@ -148,7 +148,7 @@ export default function MusicPlayer() {
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             <span className="music-minimized-pulse" />
-            <span>♪ playing...</span>
+            <span> playing...</span>
           </motion.button>
         )}
       </AnimatePresence>

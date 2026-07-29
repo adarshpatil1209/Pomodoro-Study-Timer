@@ -187,11 +187,11 @@ export default function TodoList({ todosHook, onTaskComplete }) {
               fontSize: '13px', color: '#9A7A6A'
             }}
           >
-            No tasks in Planner for today 🌸
+            No tasks in Planner for today 
           </motion.span>
         ) : copied ? (
           <span style={{ fontFamily: 'DM Sans', fontSize: '11px', color: '#7DAA96' }}>
-            ✓ Copied from Planner today
+             Copied from Planner today
           </span>
         ) : (
           <motion.button
@@ -204,7 +204,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
               fontFamily: 'DM Sans', fontSize: '11px', color: '#7DAA96', cursor: 'pointer'
             }}
           >
-            📅 Copy today from Planner
+             Copy today from Planner
           </motion.button>
         )}
       </div>
@@ -262,7 +262,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
             className={`todo-priority-toggle ${priority === 'high' ? 'todo-priority-toggle--high' : ''}`}
             onClick={() => setPriority(priority === 'high' ? 'normal' : 'high')}
           >
-            {priority === 'high' ? '⚠️ High' : 'Normal'}
+            {priority === 'high' ? ' High' : 'Normal'}
           </button>
         </div>
 

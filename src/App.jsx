@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from './contexts/AuthContext'
 import AuthPage from './pages/AuthPage'
+import LandingPage from './pages/LandingPage'
 import ProfileSetup from './pages/ProfileSetup'
 import Dashboard from './pages/Dashboard'
 import MainApp from './pages/MainApp'
@@ -39,6 +40,7 @@ function App() {
 
   return (
     <Routes>
+<<<<<<< HEAD
       <Route path="/auth" element={
         user ? <Navigate to="/" /> : <AuthPage />
       } />
@@ -66,6 +68,34 @@ function App() {
       <Route path="/settings" element={
         !user ? <Navigate to="/auth" /> : <Settings />
       } />
+=======
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth" element={user ? <Navigate to="/app" /> : <AuthPage />} />
+
+      <Route
+        path="/setup"
+        element={
+          !user ? <Navigate to="/auth" /> : profile?.exam_name ? <Navigate to="/app" /> : <ProfileSetup />
+        }
+      />
+
+      <Route
+        path="/app"
+        element={
+          !user ? <Navigate to="/auth" /> : !profile?.exam_name ? <Navigate to="/setup" /> : (
+            <Dashboard
+              onModeSelect={(mode, room) => {
+                if (mode === 'solo') {
+                  navigate('/study')
+                } else if (mode === 'room' && room) {
+                  navigate(`/room/${room.id}`)
+                }
+              }}
+            />
+          )
+        }
+      />
+>>>>>>> 034adc0 (new)
 
       <Route path="/watch" element={<WatchPage />} />
     </Routes>

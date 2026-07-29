@@ -98,7 +98,7 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.3 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="🍅" value={stats?.total_sessions || 0} label="Sessions Total" />
+          <MetricCard emoji="" value={stats?.total_sessions || 0} label="Sessions Total" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -106,7 +106,7 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.38 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="⏱" value={formatHours(stats?.total_minutes || 0)} label="Total Hours" />
+          <MetricCard emoji="" value={formatHours(stats?.total_minutes || 0)} label="Total Hours" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -114,7 +114,7 @@ export default function Stats({ stats, updateStats }) {
           transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.46 }}
           whileHover={{ y: -3, transition: { duration: 0.2 } }}
         >
-          <MetricCard emoji="🔥" value={stats?.streak_days || 0} label="Day Streak">
+          <MetricCard emoji="" value={stats?.streak_days || 0} label="Day Streak">
             {stats?.streak_days > 0 && <span className="stats-streak-badge">{stats?.streak_days}d streak</span>}
           </MetricCard>
         </motion.div>
@@ -134,9 +134,15 @@ export default function Stats({ stats, updateStats }) {
           fontWeight: 300, 
           color: daysLeft > 30 ? '#F5EFE6' : daysLeft > 10 ? '#D4893A' : '#B03030'
         }}>
+<<<<<<< HEAD
           {daysLeft <= 0 ? 'NEET Day! 🩺🎉' : daysLeft}
         </span>
         {daysLeft > 0 && <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#9A7A6A', marginTop: '4px' }}>days to NEET 🩺</span>}
+=======
+          {daysLeft <= 0 ? 'Goal day! ' : daysLeft}
+        </span>
+        {daysLeft > 0 && <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#9A7A6A', marginTop: '4px' }}>{`days to ${stats?.exam_name || 'Goal'} `}</span>}
+>>>>>>> 034adc0 (new)
       </motion.div>
 
       {/* Row 2 — Weekly chart */}
