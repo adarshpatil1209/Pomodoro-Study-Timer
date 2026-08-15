@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 const AuthPage = () => {
-  const [mode, setMode] = useState('login')
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialMode = searchParams.get('mode') || 'signup'
+  const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -19,14 +23,16 @@ const AuthPage = () => {
     if (mode === 'login') {
       const { error } = await signInWithEmail(email, password)
       if (error) setError(error.message)
+      else navigate('/app')
     } else {
       if (!name.trim()) {
         setError('Name is required')
         setLoading(false)
         return
       }
-      const { error } = await signUpWithEmail(email, password, name)
+      const { data, error } = await signUpWithEmail(email, password, name)
       if (error) setError(error.message)
+      else if (data?.user) navigate('/app')
       else setError('Check your email to confirm signup!')
     }
     setLoading(false)

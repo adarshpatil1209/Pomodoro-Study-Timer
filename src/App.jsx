@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
+import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ProfileSetup from './pages/ProfileSetup'
 import Dashboard from './pages/Dashboard'
@@ -78,17 +79,19 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+
       <Route path="/auth" element={
-        user ? <Navigate to="/" /> : <AuthPage />
+        user ? <Navigate to="/app" /> : <AuthPage />
       } />
 
       <Route path="/setup" element={
         !user ? <Navigate to="/auth" /> :
-        profile?.exam_name ? <Navigate to="/" /> :
+        profile?.exam_name ? <Navigate to="/app" /> :
         <ProfileSetup />
       } />
 
-      <Route path="/" element={
+      <Route path="/app" element={
         !user ? <Navigate to="/auth" /> :
         !profile?.exam_name ? <Navigate to="/setup" /> :
         <Dashboard />
