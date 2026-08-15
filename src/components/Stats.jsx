@@ -95,24 +95,24 @@ export default function Stats({ stats, updateStats }) {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.3 }}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.1 }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
         >
           <MetricCard emoji="🍅" value={stats?.total_sessions || 0} label="Sessions Total" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.38 }}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.17 }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
         >
           <MetricCard emoji="⏱" value={formatHours(stats?.total_minutes || 0)} label="Total Hours" />
         </motion.div>
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.46 }}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.24 }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
         >
           <MetricCard emoji="🔥" value={stats?.streak_days || 0} label="Day Streak">
             {stats?.streak_days > 0 && <span className="stats-streak-badge">{stats?.streak_days}d streak</span>}
@@ -125,8 +125,8 @@ export default function Stats({ stats, updateStats }) {
         className="stats-metric-card card"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 22, delay: 0.54 }}
-        whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.3 }}
+        whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
         style={{ padding: '24px', gridColumn: '1 / -1', marginBottom: '16px' }}
       >
         <span className="font-mono" style={{ 

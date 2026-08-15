@@ -48,7 +48,7 @@ const Dashboard = () => {
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.logo}>PomoXP ✨</h1>
+          <h1 style={styles.logo}>PomoXP</h1>
           <div style={styles.headerRight}>
             <span style={styles.profileName}>{profile?.name}</span>
             <motion.button
@@ -65,7 +65,7 @@ const Dashboard = () => {
 
         {/* Greeting */}
         <h2 style={styles.greeting}>
-          Hey {profile?.name} 👋
+          Hey {profile?.name}
         </h2>
 
         {/* Two Cards */}
@@ -74,7 +74,7 @@ const Dashboard = () => {
           <motion.div
             style={styles.card}
             whileHover={{ y: -4 }}
-            transition={{ type: 'spring', stiffness: 300 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
           >
             <span style={styles.cardIcon}>🎯</span>
             <h3 style={styles.cardTitle}>Solo Study</h3>
@@ -96,7 +96,7 @@ const Dashboard = () => {
           <motion.div
             style={styles.card}
             whileHover={{ y: -4 }}
-            transition={{ type: 'spring', stiffness: 300 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
           >
             <span style={styles.cardIcon}>👥</span>
             <h3 style={styles.cardTitle}>Study Room</h3>
@@ -187,9 +187,9 @@ const Dashboard = () => {
             style={styles.examPill}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.3 }}
           >
-            {daysToExam} days to {profile.exam_name} ✨
+            {daysToExam} days to {profile.exam_name}
           </motion.div>
         )}
       </div>

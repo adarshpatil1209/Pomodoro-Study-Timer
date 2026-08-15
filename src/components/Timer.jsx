@@ -64,7 +64,7 @@ function TomatoIcons({ sessionCount }) {
             className={isFilled ? 'tomato-filled' : 'tomato-hollow'}
             initial={isFilled ? { scale: 0 } : false}
             animate={{ scale: 1 }}
-            transition={isFilled ? { type: 'spring', stiffness: 400, damping: 15 } : { duration: 0 }}
+            transition={isFilled ? { type: 'spring', stiffness: 400, damping: 25 } : { duration: 0 }}
           >
             🍅
           </motion.span>
@@ -114,7 +114,7 @@ function CircularRing({ timeLeft, totalDuration, mode, isRunning }) {
           strokeLinecap="round"
           strokeDasharray={circumference}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.8, ease: 'easeInOut' }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
           transform="rotate(-90 120 120)"
           style={{ transition: 'stroke 0.3s ease' }}
         />
@@ -195,7 +195,7 @@ export default function Timer({ timerHook }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
               >
                 {m.label}
               </motion.span>
@@ -231,7 +231,7 @@ export default function Timer({ timerHook }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
           >
             <div className="timer-custom-input-group">
               <label className="section-label">Focus</label>

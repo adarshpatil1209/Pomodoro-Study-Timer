@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 
-const SYSTEM_PROMPT = `You are a friendly and brilliant study assistant for a medical aspirant preparing for NEET. Your name is Suru AI. You help with Physics, Chemistry, Botany, and Zoology questions. Keep answers concise, clear, and use simple language. When explaining concepts, use examples. Add relevant emojis occasionally. If asked non-study questions, gently redirect to studying.`
+const SYSTEM_PROMPT = `You are a friendly and brilliant study assistant for a medical aspirant preparing for NEET. Your name is Suru AI. You help with Physics, Chemistry, Botany, and Zoology questions. Keep answers concise, clear, and use simple language. When explaining concepts, use examples. If asked non-study questions, gently redirect to studying.`
 
 const QUICK_QUESTIONS = [
   'What is osmosis?',
@@ -124,7 +124,7 @@ export default function AIChat() {
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I could not connect. Try again! 😔',
+          content: 'Sorry, I could not connect. Try again!',
           id: Date.now() + 1,
         },
       ])
@@ -159,7 +159,7 @@ export default function AIChat() {
           gap: '4px',
         }}
       >
-        🧠 Ask AI
+        Ask AI
       </motion.button>
 
       {/* AI Panel */}
@@ -170,7 +170,7 @@ export default function AIChat() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             style={{
               position: 'fixed',
               bottom: 220,
@@ -203,12 +203,12 @@ export default function AIChat() {
                   color: '#F5EFE6',
                 }}
               >
-                🧠 Suru AI
+                Suru AI
               </span>
               <motion.button
                 onClick={() => setIsOpen(false)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 style={{
                   width: '24px', height: '24px', borderRadius: '50%',
                   background: 'transparent', border: '1px solid rgba(255,255,255,0.14)',
@@ -252,8 +252,8 @@ export default function AIChat() {
                       lineHeight: '1.5',
                     }}
                   >
-                    Hi! I'm Suru AI 🤖 Ask me anything about Physics,
-                    Chemistry, Botany or Zoology and slayy! 💅
+                    Hi! I'm Suru AI. Ask me anything about Physics,
+                    Chemistry, Botany or Zoology.
                   </p>
 
                   {/* Quick question chips */}

@@ -16,11 +16,8 @@ export default function Toast({ message, visible, onHide }) {
           className="toast font-display"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 10, opacity: 0 }}
-          transition={{
-            enter: { type: 'spring', stiffness: 300, damping: 24 },
-            exit: { duration: 0.2 },
-          }}
+          exit={{ y: 20, opacity: 0 }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
         >
           {message}
         </motion.div>

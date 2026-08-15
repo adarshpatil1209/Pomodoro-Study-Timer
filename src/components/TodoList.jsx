@@ -55,7 +55,7 @@ function TodoRow({ todo, onToggle, onDelete }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      whileHover={{ x: 4, transition: { duration: 0.15 } }}
+      whileHover={{ x: 4, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
     >
       {/* Priority dot */}
       {todo.priority === 'high' && <span className="todo-priority-dot" />}
@@ -182,12 +182,13 @@ export default function TodoList({ todosHook, onTaskComplete }) {
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
             style={{
               fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
               fontSize: '13px', color: '#9A7A6A'
             }}
           >
-            No tasks in Planner for today 🌸
+            No tasks in Planner for today
           </motion.span>
         ) : copied ? (
           <span style={{ fontFamily: 'DM Sans', fontSize: '11px', color: '#7DAA96' }}>
@@ -250,7 +251,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
                   initial={{ width: 0, opacity: 0 }}
                   animate={{ width: 100, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
                   style={{ overflow: 'hidden' }}
                 />
               )}

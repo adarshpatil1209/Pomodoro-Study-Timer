@@ -63,15 +63,15 @@ export default function EndOfDayModal({ stats, visible, onClose }) {
         >
           <motion.div
             className="eod-modal"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            initial={{ scale: 0.94, opacity: 0, y: 12 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.94, opacity: 0, y: 12 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Heading */}
             <h2 className="eod-heading font-display">
-              Today was beautiful, {name} 🌸
+              Today was beautiful, {name}
             </h2>
 
             {/* Stats summary */}
@@ -107,7 +107,7 @@ export default function EndOfDayModal({ stats, visible, onClose }) {
 
             {/* Close button */}
             <button className="btn-primary eod-close-btn" onClick={onClose}>
-              Wrap up for today 🌙
+              Wrap up for today
             </button>
           </motion.div>
         </motion.div>

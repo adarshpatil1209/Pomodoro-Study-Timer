@@ -202,6 +202,7 @@ export default function ChatWidget({ roomId }) {
               openChat()
               setToastMsg(null)
             }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             style={{
               position: 'fixed', top: 80, right: 20, zIndex: 200,
               background: '#6B0A14', borderRadius: '18px',
@@ -211,7 +212,7 @@ export default function ChatWidget({ roomId }) {
               fontSize: '16px', color: '#F5EFE6', cursor: 'pointer'
             }}
           >
-            💬 {toastMsg}
+            {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>
@@ -240,6 +241,7 @@ export default function ChatWidget({ roomId }) {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
             style={{
               position: 'absolute', top: -4, right: -4,
               background: '#B03030', borderRadius: '50%',
@@ -261,7 +263,7 @@ export default function ChatWidget({ roomId }) {
             initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
             style={{
               position: 'fixed', bottom: 120, left: 20,
               width: '280px', zIndex: 100,
@@ -285,8 +287,8 @@ export default function ChatWidget({ roomId }) {
                 {!confirmClear ? (
                   <motion.button
                     onClick={() => setConfirmClear(true)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     style={{
                       width: '24px', height: '24px', borderRadius: '50%',
                       background: 'transparent',
@@ -311,7 +313,7 @@ export default function ChatWidget({ roomId }) {
                         fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
                         color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
                       }}
-                    >Yes 🗑️</motion.button>
+                    >Yes</motion.button>
                     <motion.button
                       onClick={() => setConfirmClear(false)}
                       whileHover={{ scale: 1.05 }}

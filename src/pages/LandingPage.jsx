@@ -374,7 +374,7 @@ export default function LandingPage() {
             }}
             whileHover={{ background: '#EDE0D4', scale: 1.03 }}
             whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
           >
             Start for free
           </motion.button>
@@ -628,7 +628,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08, duration: 0.5 }}
-              whileHover={{ y: -4, borderColor: 'rgba(200,184,154,0.16)', transition: { duration: 0.2 } }}
+              whileHover={{ y: -4, borderColor: 'rgba(200,184,154,0.16)', transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
             >
               {/* Corner accent */}
               <div style={{
