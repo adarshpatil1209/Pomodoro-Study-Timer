@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PomoXP — a beautiful pomodoro timer for focused work" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400&family=DM+Mono:wght@300&display=swap" rel="stylesheet">
+    <title>PomoXP</title>
+    <style>
+      #root-loading {
+        position: fixed;
+        inset: 0;
+        background: #3D0408;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #root-loading span {
+        font-family: serif;
+        font-size: 22px;
+        color: #C8B89A;
+        letter-spacing: 0.1em;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root-loading">
+      <span>PomoXP</span>
+    </div>
+    <div id="root"></div>
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var el = document.getElementById('root-loading')
+          if (el) {
+            el.style.opacity = '0'
+            setTimeout(function() { el.remove() }, 300)
+          }
+        }, 400)
+      })
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

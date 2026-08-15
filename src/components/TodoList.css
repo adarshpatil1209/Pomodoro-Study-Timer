@@ -1,0 +1,270 @@
+/* ========================================
+   TodoList Component Styles
+   ======================================== */
+
+.todo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.todo-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* --- Add Task Area --- */
+.todo-add-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.todo-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.todo-input {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: var(--surface2);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.todo-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.todo-input:focus {
+  border-color: rgba(200,184,154,0.50);
+}
+
+.todo-add-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* --- Subject Chips --- */
+.todo-subject-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.todo-subject-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-tertiary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.todo-subject-chip--active {
+  background: rgba(200,184,154,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.todo-custom-subject-input {
+  background: #7D1020;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #F5EFE6;
+  width: 100px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.todo-custom-subject-input:focus {
+  border-color: rgba(200,184,154,0.50);
+}
+
+/* --- Priority Toggle --- */
+.todo-priority-toggle {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-tertiary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.todo-priority-toggle--high {
+  background: rgba(212,137,58,0.15);
+  border-color: var(--streak);
+  color: var(--streak);
+}
+
+/* --- Divider --- */
+.todo-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin-bottom: 10px;
+}
+
+/* --- Task List --- */
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 40px;
+}
+
+/* --- Task Row --- */
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.todo-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* --- Priority Dot --- */
+.todo-priority-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--streak);
+  flex-shrink: 0;
+}
+
+/* --- Checkbox --- */
+.todo-checkbox {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.30);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.todo-checkbox:hover {
+  border-color: rgba(255,255,255,0.60);
+}
+
+/* Checked state — applied via adjacent sibling or parent context */
+.todo-row .todo-checkbox:has(+ .todo-text--done),
+.todo-row:has(.todo-text--done) .todo-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.todo-checkmark {
+  display: block;
+}
+
+/* --- Task Text --- */
+.todo-text {
+  flex: 1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.todo-text--done {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* --- Subject Badge --- */
+.todo-subject-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(200,184,154,0.10);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* --- Delete Button --- */
+.todo-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.todo-row:hover .todo-delete-btn {
+  opacity: 0.5;
+}
+
+.todo-delete-btn:hover {
+  opacity: 1;
+}
+
+/* --- Empty State --- */
+.todo-empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: var(--text-tertiary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .todo-card {
+    padding: 16px 14px 12px;
+  }
+
+  .todo-subject-chip {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+}

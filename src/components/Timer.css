@@ -1,0 +1,257 @@
+/* ========================================
+   Timer Component Styles
+   ======================================== */
+
+.timer-card {
+  position: relative;
+  border-radius: 24px;
+  max-width: 400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 28px 24px;
+  overflow: hidden;
+}
+
+/* --- Decorative Rose --- */
+.timer-rose {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* --- Mode Tabs --- */
+.timer-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.timer-tab {
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-tertiary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.timer-tab--active {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+}
+
+/* --- Circular Ring --- */
+.timer-ring-container {
+  position: relative;
+  width: 240px;
+  height: 240px;
+}
+
+.timer-ring-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.timer-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-digits {
+  font-size: 68px;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* --- Tomato Icons --- */
+.timer-tomatoes {
+  display: flex;
+  gap: 6px;
+  margin-top: -8px;
+}
+
+.tomato-filled {
+  font-size: 18px;
+  opacity: 1;
+}
+
+.tomato-hollow {
+  font-size: 18px;
+  opacity: 0.25;
+}
+
+/* --- Preset Chips --- */
+.timer-presets {
+  display: flex;
+  gap: 8px;
+}
+
+.timer-preset-chip {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.timer-preset-chip--active {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+}
+
+/* --- Custom Inputs --- */
+.timer-custom-row {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.timer-custom-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-custom-input {
+  width: 60px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.timer-custom-input::-webkit-outer-spin-button,
+.timer-custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.timer-custom-unit {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* --- Control Buttons --- */
+.timer-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.timer-ctrl-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timer-main-btn {
+  width: 140px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+/* --- Auto-start Toggle --- */
+.timer-autostart {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timer-autostart-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.timer-toggle {
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s ease;
+}
+
+.timer-toggle--on {
+  background: var(--accent);
+  justify-content: flex-end;
+}
+
+.timer-toggle-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.50);
+}
+
+.timer-toggle--on .timer-toggle-thumb {
+  background: var(--surface);
+}
+
+/* --- Keyboard Hint --- */
+.timer-hint {
+  display: flex;
+  justify-content: center;
+}
+
+.timer-hint-chip {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .timer-card {
+    padding: 24px 18px 20px;
+  }
+
+  .timer-ring-container {
+    width: 180px;
+    height: 180px;
+  }
+
+  .timer-digits {
+    font-size: 48px;
+  }
+
+  .timer-rose {
+    width: 60px;
+    height: 60px;
+  }
+}

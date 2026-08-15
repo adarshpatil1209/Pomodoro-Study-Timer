@@ -1,0 +1,450 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Trash2 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+
+export default function ChatWidget({ roomId }) {
+  const currentRoomId = roomId || 'solo'
+  const [chatOpen, setChatOpen] = useState(false)
+  const [messages, setMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [toastMsg, setToastMsg] = useState(null)
+  const [clearedMsg, setClearedMsg] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  const channelRef = useRef(null)
+  const messagesEndRef = useRef(null)
+  const originalTitle = useRef(document.title)
+  const notifInterval = useRef(null)
+  const chatOpenRef = useRef(false)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    chatOpenRef.current = chatOpen
+  }, [chatOpen])
+
+  const showTabNotification = (count) => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    let show = true
+    notifInterval.current = setInterval(() => {
+      document.title = show
+        ? `(${count}) New message 💬`
+        : originalTitle.current
+      show = !show
+    }, 1000)
+  }
+
+  const clearTabNotification = () => {
+    if (notifInterval.current) clearInterval(notifInterval.current)
+    document.title = originalTitle.current
+  }
+
+  useEffect(() => {
+    const handleFocus = () => clearTabNotification()
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
+
+  // Auto cleanup messages older than 24 hours
+  const cleanOldMessages = useCallback(async () => {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    await supabase
+      .from('messages')
+      .delete()
+      .lt('created_at', cutoff.toISOString())
+  }, [])
+
+  // Fetch with limit(50)
+  const fetchMessages = useCallback(async () => {
+    const { data } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('room_id', currentRoomId)
+      .order('created_at', { ascending: true })
+      .limit(50)
+
+    if (data) {
+      setMessages(data)
+      const unread = data.filter(m => m.from_role === 'viewer' && !m.read_at).length
+      setUnreadCount(unread)
+      if (unread > 0) showTabNotification(unread)
+    }
+  }, [])
+
+  // Mount: clean old messages, fetch + subscribe
+  useEffect(() => {
+    cleanOldMessages()
+    fetchMessages()
+
+    const channel = supabase
+      .channel(`messages-${currentRoomId}-` + Date.now())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Realtime event:', payload)
+          if (payload.eventType === 'INSERT') {
+            const newMsg = payload.new
+            setMessages(prev => {
+              // avoid duplicates
+              if (prev.find(m => m.id === newMsg.id)) return prev
+              return [...prev, newMsg]
+            })
+            if (newMsg.from_role === 'viewer') {
+              setUnreadCount(prev => {
+                const count = prev + 1
+                showTabNotification(count)
+                return count
+              })
+              if (!chatOpenRef.current) {
+                setToastMsg(newMsg.text)
+                setTimeout(() => setToastMsg(null), 5000)
+              }
+            }
+          }
+          if (payload.eventType === 'DELETE') {
+            setMessages([])
+            setClearedMsg(true)
+            setTimeout(() => setClearedMsg(false), 2000)
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status)
+      })
+
+    channelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [cleanOldMessages, fetchMessages])
+
+  // Auto-scroll
+  useEffect(() => {
+    if (chatOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatOpen, messages])
+
+  // Send message to Supabase
+  const sendMessage = async () => {
+    if (!chatInput.trim()) return
+    const { error } = await supabase
+      .from('messages')
+      .insert({ text: chatInput.trim(), from_role: 'her', room_id: currentRoomId })
+    if (!error) setChatInput('')
+  }
+
+  // Open chat
+  const openChat = () => {
+    setChatOpen(true)
+    setUnreadCount(0)
+    clearTabNotification()
+    setClearedMsg(false)
+
+    // Mark viewer messages as read
+    supabase
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('from_role', 'viewer')
+      .is('read_at', null)
+      .then(() => {})
+
+    fetchMessages()
+  }
+
+  const closeChat = () => {
+    setChatOpen(false)
+  }
+
+  const formatTime = (dateStr) => {
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Clear all messages (manual clear button)
+  const clearAllMessages = async () => {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+
+    if (!error) {
+      setMessages([])
+      setConfirmClear(false)
+      setClearedMsg(true)
+      setTimeout(() => setClearedMsg(false), 2000)
+    }
+  }
+
+  // Auto-reset confirmClear after 5s
+  useEffect(() => {
+    if (!confirmClear) return
+    const t = setTimeout(() => setConfirmClear(false), 5000)
+    return () => clearTimeout(t)
+  }, [confirmClear])
+
+  return (
+    <>
+      {/* Toast Popup */}
+      <AnimatePresence>
+        {toastMsg && !chatOpen && (
+          <motion.div
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 60, opacity: 0 }}
+            onClick={() => {
+              openChat()
+              setToastMsg(null)
+            }}
+            style={{
+              position: 'fixed', top: 80, right: 20, zIndex: 200,
+              background: '#6B0A14', borderRadius: '18px',
+              border: '1px solid rgba(255,255,255,0.12)',
+              padding: '12px 18px', maxWidth: '260px',
+              fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+              fontSize: '16px', color: '#F5EFE6', cursor: 'pointer'
+            }}
+          >
+            💬 {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Button */}
+      <motion.button
+        onClick={() => {
+          if (chatOpen) {
+            closeChat()
+          } else {
+            openChat()
+          }
+        }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.96 }}
+        style={{
+          position: 'fixed', bottom: 70, left: 20, zIndex: 100,
+          background: '#6B0A14', border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: '999px', padding: '8px 16px',
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: '16px'
+        }}
+      >
+        💬
+        {unreadCount > 0 && !chatOpen && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            style={{
+              position: 'absolute', top: -4, right: -4,
+              background: '#B03030', borderRadius: '50%',
+              width: '18px', height: '18px',
+              fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
+              color: 'white', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontWeight: 700
+            }}
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </motion.div>
+        )}
+      </motion.button>
+
+      {/* Chat Panel */}
+      <AnimatePresence>
+        {chatOpen && (
+          <motion.div
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{
+              position: 'fixed', bottom: 120, left: 20,
+              width: '280px', zIndex: 100,
+              background: '#6B0A14', borderRadius: '20px',
+              border: '1px solid rgba(255,255,255,0.10)',
+              padding: '14px', display: 'flex', flexDirection: 'column'
+            }}
+          >
+            {/* Header row */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: '12px'
+            }}>
+              <span style={{
+                fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+                fontSize: '16px', color: '#F5EFE6'
+              }}>Messages</span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {/* Clear button with confirmation */}
+                {!confirmClear ? (
+                  <motion.button
+                    onClick={() => setConfirmClear(true)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    style={{
+                      width: '24px', height: '24px', borderRadius: '50%',
+                      background: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      color: '#B03030', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </motion.button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '3px' }}>
+                    <motion.button
+                      onClick={clearAllMessages}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{
+                        background: 'rgba(176,48,48,0.25)',
+                        border: '1px solid rgba(176,48,48,0.4)',
+                        borderRadius: '8px', padding: '2px 6px',
+                        fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
+                        color: '#B03030', cursor: 'pointer', whiteSpace: 'nowrap'
+                      }}
+                    >Yes 🗑️</motion.button>
+                    <motion.button
+                      onClick={() => setConfirmClear(false)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        borderRadius: '8px', padding: '2px 6px',
+                        fontFamily: 'DM Sans, sans-serif', fontSize: '10px',
+                        color: '#F5EFE6', cursor: 'pointer'
+                      }}
+                    >No</motion.button>
+                  </div>
+                )}
+
+                <button
+                  onClick={closeChat}
+                  style={{
+                    background: 'transparent', border: 'none', color: '#F5EFE6',
+                    cursor: 'pointer', fontSize: '14px', padding: '4px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >✕</button>
+              </div>
+            </div>
+
+            {/* Messages list */}
+            <div style={{
+              maxHeight: '240px', overflowY: 'auto',
+              scrollbarWidth: 'none', msOverflowStyle: 'none',
+              display: 'flex', flexDirection: 'column', gap: '4px',
+              marginBottom: '12px', minHeight: '60px'
+            }}>
+              <AnimatePresence mode="popLayout">
+                {messages.map(msg => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ y: -10, opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      alignSelf: msg.from_role === 'viewer' ? 'flex-start' : 'flex-end',
+                      maxWidth: '85%'
+                    }}
+                  >
+                    <div style={{
+                      background: msg.from_role === 'viewer'
+                        ? 'rgba(61,4,8,0.8)'
+                        : 'rgba(200,184,154,0.15)',
+                      borderRadius: msg.from_role === 'viewer'
+                        ? '16px 16px 16px 4px'
+                        : '16px 16px 4px 16px',
+                      padding: '6px 10px',
+                      fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+                      fontSize: '14px', color: '#F5EFE6'
+                    }}>
+                      {msg.text}
+                    </div>
+                    <div style={{
+                      fontFamily: 'DM Sans, sans-serif', fontSize: '10px', color: '#9A7A6A',
+                      marginTop: '2px',
+                      textAlign: msg.from_role === 'viewer' ? 'left' : 'right'
+                    }}>
+                      {formatTime(msg.created_at)}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Cleared message */}
+              <AnimatePresence>
+                {clearedMsg && messages.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      textAlign: 'center', padding: '20px 0',
+                      fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+                      fontSize: '14px', color: '#9A7A6A'
+                    }}
+                  >
+                    Messages cleared 🔥
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Empty state */}
+              {messages.length === 0 && !clearedMsg && (
+                <div style={{
+                  textAlign: 'center', padding: '20px 0',
+                  fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
+                  color: '#9A7A6A'
+                }}>
+                  <div style={{ fontSize: '14px', marginBottom: '4px' }}>No messages yet 🌸</div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input row */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.stopPropagation(); sendMessage() }
+                }}
+                onClick={e => e.stopPropagation()}
+                placeholder="Send a message..."
+                style={{
+                  flex: 1, background: '#7D1020',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: '10px', padding: '6px 10px',
+                  color: '#F5EFE6', fontFamily: 'DM Sans, sans-serif',
+                  fontSize: '12px', outline: 'none'
+                }}
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); sendMessage() }}
+                style={{
+                  background: '#C8B89A', border: 'none',
+                  borderRadius: '10px', padding: '6px 10px',
+                  color: '#6B0A14', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >↑</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}

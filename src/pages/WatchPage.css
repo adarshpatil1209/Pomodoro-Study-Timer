@@ -1,0 +1,324 @@
+/* ========================================
+   WatchPage — viewer full-page styles
+   No gradients, no blur.
+   ======================================== */
+
+/* ── Root ── */
+.wp-root {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Auth screen ── */
+.wp-auth {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.wp-auth-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 24px;
+  padding: 48px 40px 40px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wp-auth-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.wp-auth-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--text-secondary);
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.wp-auth-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.wp-auth-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  letter-spacing: 0.25em;
+  padding: 12px 16px;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.15s ease;
+}
+
+.wp-auth-input:focus {
+  border-color: rgba(200, 184, 154, 0.40);
+}
+
+.wp-auth-error {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--destructive);
+  text-align: center;
+  margin: 0;
+}
+
+.wp-auth-btn {
+  width: 100%;
+  padding: 13px 0;
+  border-radius: 12px;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Camera prompt banner ── */
+.wp-cam-prompt {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: var(--surface2);
+  border: 1px solid rgba(200, 184, 154, 0.20);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Her video area (top 60%) ── */
+.wp-her-area {
+  flex: 0 0 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 16px;
+}
+
+.wp-her-video-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.wp-her-video {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 4 / 3;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  object-fit: cover;
+  background: var(--surface2);
+  display: block;
+}
+
+.wp-her-placeholder {
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 4 / 3;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-her-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+/* Reconnect button */
+.wp-reconnect-btn {
+  margin-top: 8px;
+  padding: 8px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.wp-reconnect-btn:hover {
+  opacity: 1;
+}
+
+/* ── Bottom bar (remaining ~40%) ── */
+.wp-bottom {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px 24px 28px;
+  gap: 10px;
+  min-height: 0;
+}
+
+/* Messages list */
+.wp-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+  scrollbar-width: none;
+  max-height: 180px;
+}
+
+.wp-messages::-webkit-scrollbar {
+  display: none;
+}
+
+.wp-msg {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  max-width: 70%;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.wp-msg-self {
+  background: rgba(200, 184, 154, 0.14);
+  color: var(--accent);
+  align-self: flex-end;
+}
+
+.wp-msg-other {
+  background: rgba(200, 184, 154, 0.10);
+  color: var(--text-secondary);
+  align-self: flex-start;
+}
+
+.wp-msg-from {
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 600;
+  margin-right: 3px;
+}
+
+/* Chat input row */
+.wp-chat-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.wp-chat-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.wp-chat-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.wp-chat-input:focus {
+  border-color: rgba(200, 184, 154, 0.35);
+}
+
+.wp-chat-send {
+  padding: 12px 22px;
+  border-radius: 14px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Your camera — fixed bottom-right corner ── */
+.wp-your-wrap {
+  position: fixed;
+  bottom: 28px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.wp-your-video {
+  width: 160px;
+  height: 120px;
+  border-radius: 14px;
+  border: 1px solid rgba(200, 184, 154, 0.15);
+  object-fit: cover;
+  background: var(--surface2);
+  display: block;
+}
+
+.wp-mirrored {
+  transform: scaleX(-1);
+}
+
+.wp-your-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.wp-cam-error {
+  width: 160px;
+  height: 120px;
+  border-radius: 14px;
+  border: 1px solid rgba(200, 184, 154, 0.15);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 10px;
+  line-height: 1.3;
+}

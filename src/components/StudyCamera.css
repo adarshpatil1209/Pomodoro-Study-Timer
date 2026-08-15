@@ -1,0 +1,463 @@
+/* ========================================
+   StudyCamera — her-side floating panel
+   No gradients, no blur.
+   ======================================== */
+
+/* ══════════════════════════════════════════
+   FULL PANEL
+   ══════════════════════════════════════════ */
+
+.sc-panel {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  z-index: 300;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: auto;
+  /* framer-motion handles scale/opacity entry */
+}
+
+/* Header row */
+.sc-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.sc-panel-minimize {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0 0 2px 0; /* nudge minus glyph */
+}
+
+.sc-panel-minimize:hover {
+  background: var(--hover-overlay);
+  color: var(--text-primary);
+}
+
+/* Full-panel video slot */
+.sc-full-video-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sc-full-video {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  background: var(--surface2);
+}
+
+.sc-full-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-full-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+
+.sc-label-him {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.sc-mirrored {
+  transform: scaleX(-1);
+}
+
+/* End camera button */
+.sc-end-btn {
+  width: 100%;
+  padding: 9px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sc-end-btn:hover {
+  background: rgba(176, 48, 48, 0.15);
+  color: #e07070;
+  border-color: rgba(176, 48, 48, 0.25);
+}
+
+/* ══════════════════════════════════════════
+   MINIMIZED DRAGGABLE PILL
+   ══════════════════════════════════════════ */
+
+.sc-mini-drag {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  z-index: 999;
+  /* position managed by framer-motion drag */
+}
+
+.sc-mini-video-box {
+  width: 160px;
+  height: 120px;
+  border-radius: 16px;
+  border: 1px solid rgba(200, 184, 154, 0.20);
+  overflow: hidden;
+  background: var(--surface2);
+  position: relative;
+}
+
+.sc-mini-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-mini-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Expand button — top-right corner */
+.sc-mini-expand {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  line-height: 1;
+}
+
+.sc-mini-expand:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* 👁 live badge — bottom-left */
+.sc-mini-live-badge {
+  position: absolute;
+  bottom: 7px;
+  left: 7px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.40);
+  border-radius: 999px;
+  padding: 2px 7px 2px 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  pointer-events: none;
+}
+
+.sc-mini-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4cbb6e;
+  flex-shrink: 0;
+  animation: sc-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sc-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ══════════════════════════════════════════
+   CAMERA PERMISSION STATES
+   ══════════════════════════════════════════ */
+
+/* Error inside video box */
+.sc-permission-error {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 12px;
+  line-height: 1.4;
+}
+
+/* Pending state inside video box */
+.sc-cam-pending {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 12px;
+  line-height: 1.4;
+}
+
+.sc-pending-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ── Camera denied banner — fixed top center ── */
+.sc-denied-banner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  background: #6B0A14;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 14px 22px;
+  width: min(440px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.sc-denied-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+
+.sc-denied-close:hover {
+  color: #F5EFE6;
+}
+
+.sc-denied-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #F5EFE6;
+  line-height: 1.35;
+  margin: 0;
+  padding-right: 20px;
+}
+
+.sc-denied-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: rgba(245, 239, 230, 0.75);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sc-denied-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sc-denied-steps span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: #9A7A6A;
+  line-height: 1.5;
+}
+
+.sc-denied-retry {
+  margin-top: 2px;
+  padding: 7px 18px;
+  font-size: 12px;
+  border-radius: 10px;
+  align-self: flex-start;
+}
+
+/* ══════════════════════════════════════════
+   CHAT
+   ══════════════════════════════════════════ */
+
+.sc-chat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-messages {
+  max-height: 90px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  scrollbar-width: none;
+}
+
+.sc-messages::-webkit-scrollbar { display: none; }
+
+.sc-msg {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  max-width: 85%;
+  word-break: break-word;
+  line-height: 1.35;
+  color: #F5EFE6;
+}
+
+.sc-msg-self {
+  background: rgba(200, 184, 154, 0.15);
+  color: #F5EFE6;
+  align-self: flex-end;
+}
+
+.sc-msg-other {
+  background: rgba(107, 10, 20, 0.8);
+  color: #F5EFE6;
+  align-self: flex-start;
+}
+
+.sc-msg-label {
+  color: var(--accent);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.sc-chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.sc-chat-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  padding: 6px 10px;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+
+.sc-chat-input::placeholder { color: var(--text-tertiary); }
+.sc-chat-input:focus { border-color: rgba(200, 184, 154, 0.35); }
+
+.sc-chat-send {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   TOGGLE BUTTON (in app header)
+   ══════════════════════════════════════════ */
+
+.sc-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s ease, transform 0.15s ease;
+  color: var(--text-secondary);
+}
+
+.sc-toggle-btn:hover {
+  background: var(--hover-overlay);
+  transform: scale(1.05);
+}
+
+.sc-toggle-btn:active { transform: scale(0.94); }
+
+.sc-toggle-btn--on {
+  background: rgba(200, 184, 154, 0.12);
+  border-color: rgba(200, 184, 154, 0.30);
+}
