@@ -64,7 +64,7 @@ function TomatoIcons({ sessionCount }) {
             className={isFilled ? 'tomato-filled' : 'tomato-hollow'}
             initial={isFilled ? { scale: 0 } : false}
             animate={{ scale: 1 }}
-            transition={isFilled ? { type: 'spring', stiffness: 400, damping: 25 } : { duration: 0 }}
+            transition={isFilled ? { type: 'spring', bounce: 0.2, duration: 0.4 } : { duration: 0 }}
           >
             🍅
           </motion.span>
@@ -195,7 +195,7 @@ export default function Timer({ timerHook }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ type: 'spring', bounce: 0, duration: 0.2 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
               >
                 {m.label}
               </motion.span>
@@ -231,7 +231,7 @@ export default function Timer({ timerHook }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
           >
             <div className="timer-custom-input-group">
               <label className="section-label">Focus</label>
@@ -294,7 +294,7 @@ export default function Timer({ timerHook }) {
           <motion.div
             className="timer-toggle-thumb"
             layout
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
           />
         </button>
       </div>

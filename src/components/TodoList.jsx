@@ -28,7 +28,7 @@ function Checkbox({ checked, onToggle }) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
             className="todo-checkmark"
           >
             <path
@@ -54,8 +54,8 @@ function TodoRow({ todo, onToggle, onDelete }) {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ opacity: 0, x: -20 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      whileHover={{ x: 4, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+      whileHover={{ x: 4, transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
     >
       {/* Priority dot */}
       {todo.priority === 'high' && <span className="todo-priority-dot" />}
@@ -182,7 +182,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             style={{
               fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
               fontSize: '13px', color: '#9A7A6A'
@@ -251,7 +251,7 @@ export default function TodoList({ todosHook, onTaskComplete }) {
                   initial={{ width: 0, opacity: 0 }}
                   animate={{ width: 100, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
-                  transition={{ type: 'spring', bounce: 0, duration: 0.25 }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
                   style={{ overflow: 'hidden' }}
                 />
               )}

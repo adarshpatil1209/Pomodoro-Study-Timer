@@ -64,7 +64,7 @@ function WeeklyChart({ weeklyData: rawWeekly }) {
                 style={{ backgroundColor: isToday ? '#EDE0D4' : '#C8B89A' }}
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPct}%` }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20, delay: i * 0.04 }}
+                transition={{ type: 'spring', bounce: 0, duration: 0.5, delay: i * 0.04 }}
               />
             </div>
             <span className={`stats-chart-day ${isToday ? 'stats-chart-day--today' : ''}`}>
@@ -96,7 +96,7 @@ export default function Stats({ stats, updateStats }) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.1 }}
-          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
         >
           <MetricCard emoji="🍅" value={stats?.total_sessions || 0} label="Sessions Total" />
         </motion.div>
@@ -104,7 +104,7 @@ export default function Stats({ stats, updateStats }) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.17 }}
-          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
         >
           <MetricCard emoji="⏱" value={formatHours(stats?.total_minutes || 0)} label="Total Hours" />
         </motion.div>
@@ -112,7 +112,7 @@ export default function Stats({ stats, updateStats }) {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.24 }}
-          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
+          whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
         >
           <MetricCard emoji="🔥" value={stats?.streak_days || 0} label="Day Streak">
             {stats?.streak_days > 0 && <span className="stats-streak-badge">{stats?.streak_days}d streak</span>}
@@ -126,7 +126,7 @@ export default function Stats({ stats, updateStats }) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', bounce: 0, duration: 0.4, delay: 0.3 }}
-        whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.2 } }}
+        whileHover={{ y: -3, transition: { type: 'spring', bounce: 0, duration: 0.3 } }}
         style={{ padding: '24px', gridColumn: '1 / -1', marginBottom: '16px' }}
       >
         <span className="font-mono" style={{ 

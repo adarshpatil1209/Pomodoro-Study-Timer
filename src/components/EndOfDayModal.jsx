@@ -66,7 +66,7 @@ export default function EndOfDayModal({ stats, visible, onClose }) {
             initial={{ scale: 0.94, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.94, opacity: 0, y: 12 }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Heading */}

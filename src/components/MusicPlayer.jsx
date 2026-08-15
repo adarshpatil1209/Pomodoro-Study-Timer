@@ -128,7 +128,7 @@ export default function MusicPlayer() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
           >
             <Music size={14} />
             <span>Music</span>
@@ -145,7 +145,7 @@ export default function MusicPlayer() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
           >
             <span className="music-minimized-pulse" />
             <span>♪ playing...</span>
@@ -165,7 +165,7 @@ export default function MusicPlayer() {
             y: isMinimized ? 20 : 0,
             height: isMinimized ? 0 : 'auto',
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
           style={{
             transformOrigin: 'bottom right',
             overflow: isMinimized ? 'hidden' : 'visible',

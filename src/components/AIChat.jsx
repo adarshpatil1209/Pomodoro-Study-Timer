@@ -140,7 +140,7 @@ export default function AIChat() {
         ref={buttonRef}
         onClick={() => setIsOpen((prev) => !prev)}
         whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.96 }}
+        whileTap={{ scale: 0.97 }}
         style={{
           position: 'fixed',
           bottom: 170,
@@ -208,7 +208,7 @@ export default function AIChat() {
               <motion.button
                 onClick={() => setIsOpen(false)}
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.97 }}
                 style={{
                   width: '24px', height: '24px', borderRadius: '50%',
                   background: 'transparent', border: '1px solid rgba(255,255,255,0.14)',

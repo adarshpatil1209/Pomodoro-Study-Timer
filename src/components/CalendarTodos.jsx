@@ -209,7 +209,7 @@ export default function CalendarTodos() {
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileTap={{ scale: 0.97 }}
         style={{
           position: 'fixed',
           bottom: 120, // positioned above the chat widget
@@ -240,7 +240,7 @@ export default function CalendarTodos() {
             initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             style={{
               position: 'fixed',
               bottom: '80px',

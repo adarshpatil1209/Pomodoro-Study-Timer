@@ -145,7 +145,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
       <motion.button
         onClick={takeSnap}
         whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.96 }}
+        whileTap={{ scale: 0.97 }}
         style={{
           position: 'fixed', bottom: 20, left: 20, zIndex: 100,
           background: '#6B0A14', border: '1px solid rgba(255,255,255,0.10)',
@@ -189,7 +189,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden' }}
             >
               <motion.div
@@ -260,7 +260,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
                 <motion.button
                   onClick={triggerSendSnap}
                   whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
+                  whileTap={{ scale: 0.97 }}
                   style={{
                     background: '#C8B89A', color: '#6B0A14',
                     border: 'none', borderRadius: '999px',
@@ -283,7 +283,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
             initial={{ x: 60, opacity: 0, scale: 0.9 }}
             animate={{ x: 0, opacity: 1, scale: 1 }}
             exit={{ x: 60, opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
             style={{
               position: 'fixed',
               bottom: '80px',
@@ -366,7 +366,7 @@ export default function StudyCamera({ isOpen, onClose, roomId }) {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               style={{
                 width: '340px', maxWidth: '90vw', borderRadius: '20px',
                 border: '1px solid rgba(255,255,255,0.10)'
