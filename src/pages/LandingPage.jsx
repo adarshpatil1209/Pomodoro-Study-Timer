@@ -273,7 +273,24 @@ export default function LandingPage() {
         position: 'relative',
         zIndex: 1,
       }}>
-
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.15,
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        >
+          <source src="/hero-bg.mp4" type="video/mp4" />
+        </video>
         {/* Top label pill */}
         <motion.div
           style={{
