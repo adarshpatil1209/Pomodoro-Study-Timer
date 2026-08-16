@@ -143,12 +143,13 @@ export default function LandingPage() {
       <motion.div
         style={{
           position: 'fixed',
-          width: 500,
-          height: 500,
-          top: -150,
-          left: -100,
-          background: 'rgba(107,10,20,0.4)',
+          width: 600,
+          height: 600,
+          top: -200,
+          left: -150,
+          background: 'rgba(107,10,20,0.6)',
           borderRadius: '50%',
+          filter: 'blur(80px)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -158,12 +159,13 @@ export default function LandingPage() {
       <motion.div
         style={{
           position: 'fixed',
-          width: 350,
-          height: 350,
-          bottom: -80,
-          right: -80,
-          background: 'rgba(107,10,20,0.3)',
+          width: 400,
+          height: 400,
+          bottom: -100,
+          right: -100,
+          background: 'rgba(107,10,20,0.5)',
           borderRadius: '50%',
+          filter: 'blur(60px)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -173,12 +175,13 @@ export default function LandingPage() {
       <motion.div
         style={{
           position: 'fixed',
-          width: 200,
-          height: 200,
+          width: 300,
+          height: 300,
           top: '40%',
-          left: '60%',
-          background: 'rgba(125,170,150,0.04)',
+          left: '50%',
+          background: 'rgba(125,170,150,0.08)',
           borderRadius: '50%',
+          filter: 'blur(80px)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -189,12 +192,15 @@ export default function LandingPage() {
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <motion.nav
         style={{
+          height: 60,
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          background: 'rgba(61,4,8,0.85)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          padding: '16px 40px',
+          background: 'rgba(61,4,8,0.7)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          padding: '0 40px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -208,7 +214,7 @@ export default function LandingPage() {
           fontWeight: 600,
           fontSize: 20,
           textTransform: 'uppercase',
-          letterSpacing: '0.12em',
+          letterSpacing: '0.14em',
           color: '#F5EFE6',
         }}>
           PomoXP
@@ -271,15 +277,15 @@ export default function LandingPage() {
         {/* Top label pill */}
         <motion.div
           style={{
-            background: 'rgba(200,184,154,0.08)',
-            border: '1px solid rgba(200,184,154,0.15)',
+            background: 'rgba(200,184,154,0.06)',
+            border: '1px solid rgba(200,184,154,0.12)',
             borderRadius: 999,
             padding: '5px 16px',
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 300,
-            fontSize: 11,
+            fontSize: 10,
             textTransform: 'uppercase',
-            letterSpacing: '0.16em',
+            letterSpacing: '0.18em',
             color: '#9A7A6A',
             marginBottom: 28,
             display: 'inline-block',
@@ -292,14 +298,15 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Main heading */}
-        <div>
+        <div style={{ width: '100%' }}>
           <motion.div
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 600,
-              fontSize: 'clamp(52px, 8vw, 96px)',
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(56px, 9vw, 100px)',
+              lineHeight: 0.95,
+              letterSpacing: '-0.03em',
+              fontStyle: 'italic',
               color: '#F5EFE6',
               display: 'block',
             }}
@@ -313,9 +320,10 @@ export default function LandingPage() {
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 600,
-              fontSize: 'clamp(52px, 8vw, 96px)',
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              fontSize: 'clamp(56px, 9vw, 100px)',
+              lineHeight: 0.95,
+              letterSpacing: '-0.03em',
+              fontStyle: 'italic',
               color: '#C8B89A',
               display: 'block',
             }}
@@ -332,11 +340,11 @@ export default function LandingPage() {
           style={{
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 300,
-            fontSize: 16,
-            color: '#9A7A6A',
-            maxWidth: 520,
+            fontSize: 15,
+            color: 'rgba(154,122,106,0.8)',
+            maxWidth: 440,
             margin: '20px auto 0',
-            lineHeight: 1.7,
+            lineHeight: 1.75,
           }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -366,7 +374,7 @@ export default function LandingPage() {
               color: '#6B0A14',
               border: 'none',
               borderRadius: 12,
-              padding: '14px 32px',
+              padding: '13px 32px',
               fontFamily: "'DM Sans', sans-serif",
               fontWeight: 500,
               fontSize: 14,
@@ -385,7 +393,7 @@ export default function LandingPage() {
               background: 'transparent',
               border: '1px solid rgba(255,255,255,0.14)',
               borderRadius: 12,
-              padding: '14px 32px',
+              padding: '13px 32px',
               fontFamily: "'DM Sans', sans-serif",
               fontWeight: 500,
               fontSize: 14,
@@ -616,13 +624,15 @@ export default function LandingPage() {
             <motion.div
               key={feature.title}
               style={{
-                background: '#6B0A14',
+                background: 'rgba(107,10,20,0.4)',
                 borderRadius: 20,
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.06)',
                 padding: '28px 24px',
                 position: 'relative',
                 overflow: 'hidden',
                 cursor: 'default',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
               }}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -642,27 +652,26 @@ export default function LandingPage() {
                 borderTopRightRadius: 20,
               }} />
 
-              {/* Icon */}
+              {/* Top label */}
               <div style={{
-                width: 40,
-                height: 40,
-                background: 'rgba(200,184,154,0.08)',
-                borderRadius: 10,
-                border: '1px solid rgba(200,184,154,0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 300,
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.16em',
+                color: '#9A7A6A',
+                marginBottom: 12,
               }}>
-                {feature.icon}
+                Feature
               </div>
 
               {/* Title */}
               <div style={{
                 fontFamily: "'Cormorant Garamond', serif",
                 fontWeight: 600,
-                fontSize: 18,
+                fontSize: 22,
                 color: '#F5EFE6',
+                letterSpacing: '-0.01em',
                 marginBottom: 8,
               }}>
                 {feature.title}
@@ -673,8 +682,9 @@ export default function LandingPage() {
                 fontFamily: "'DM Sans', sans-serif",
                 fontWeight: 300,
                 fontSize: 13,
-                color: '#9A7A6A',
-                lineHeight: 1.6,
+                color: 'rgba(154,122,106,0.8)',
+                lineHeight: 1.65,
+                marginTop: 8,
               }}>
                 {feature.description}
               </div>

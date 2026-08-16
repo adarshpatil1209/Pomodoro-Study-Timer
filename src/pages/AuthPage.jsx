@@ -48,7 +48,7 @@ const AuthPage = () => {
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logoSection}>
-          <h1 style={styles.logo}>PomoXP ✨</h1>
+          <h1 style={styles.logo}>PomoXP</h1>
           <p style={styles.tagline}>Study smarter. Together.</p>
         </div>
 
@@ -202,21 +202,28 @@ const styles = {
   logoSection: {
     textAlign: 'center',
     marginBottom: 32,
+    background: 'rgba(61,4,8,0.6)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderRight: '1px solid rgba(255,255,255,0.05)',
+    padding: 20,
+    borderRadius: '24px 24px 0 0',
   },
   logo: {
     fontFamily: "'Cormorant Garamond', serif",
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.12em',
+    letterSpacing: '0.06em',
     color: '#F5EFE6',
-    fontSize: 28,
+    fontSize: 52,
+    lineHeight: 1,
     margin: 0,
   },
   tagline: {
     fontFamily: "'Cormorant Garamond', serif",
     fontStyle: 'italic',
     fontWeight: 300,
-    fontSize: 16,
+    fontSize: 20,
     color: '#9A7A6A',
     margin: '8px 0 0',
   },

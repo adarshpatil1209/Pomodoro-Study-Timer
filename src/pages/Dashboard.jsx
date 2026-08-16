@@ -65,7 +65,7 @@ const Dashboard = () => {
 
         {/* Greeting */}
         <h2 style={styles.greeting}>
-          Hey {profile?.name}
+          Good morning, {profile?.name}.
         </h2>
 
         {/* Two Cards */}
@@ -250,8 +250,9 @@ const styles = {
   greeting: {
     fontFamily: "'Cormorant Garamond', serif",
     fontStyle: 'italic',
-    fontWeight: 400,
-    fontSize: 26,
+    fontWeight: 300,
+    fontSize: 'clamp(28px, 4vw, 44px)',
+    letterSpacing: '-0.01em',
     color: '#F5EFE6',
     textAlign: 'center',
     margin: '24px 0 36px',
@@ -262,9 +263,11 @@ const styles = {
     gap: 16,
   },
   card: {
-    background: '#6B0A14',
+    background: 'rgba(107,10,20,0.5)',
     borderRadius: 24,
-    border: '1px solid rgba(255,255,255,0.10)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
     padding: 28,
     textAlign: 'center',
   },
@@ -276,7 +279,8 @@ const styles = {
   cardTitle: {
     fontFamily: "'Cormorant Garamond', serif",
     fontWeight: 600,
-    fontSize: 20,
+    fontSize: 24,
+    letterSpacing: '-0.01em',
     color: '#F5EFE6',
     margin: '0 0 8px',
   },

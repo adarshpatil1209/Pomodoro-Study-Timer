@@ -8,73 +8,13 @@ import Dashboard from './pages/Dashboard'
 import MainApp from './pages/MainApp'
 import Settings from './pages/Settings'
 import WatchPage from './pages/WatchPage'
+import ClockLoader from './components/ClockLoader'
 
 function App() {
   const { user, profile, loading } = useAuth()
-  const [showRefresh, setShowRefresh] = useState(false)
-
-  useEffect(() => {
-    if (!loading) return
-    const t = setTimeout(() => setShowRefresh(true), 4000)
-    return () => clearTimeout(t)
-  }, [loading])
 
   if (loading) {
-    return (
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: '#3D0408',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '16px'
-      }}>
-        <span style={{
-          fontFamily: 'Cormorant Garamond, serif',
-          fontSize: '26px',
-          fontWeight: 600,
-          letterSpacing: '0.1em',
-          color: '#C8B89A',
-          textTransform: 'uppercase'
-        }}>
-          PomoXP
-        </span>
-
-        {showRefresh && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: '12px',
-              color: '#9A7A6A'
-            }}>
-              Taking longer than usual
-            </span>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '8px',
-                padding: '6px 16px',
-                color: '#C8B89A',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              Refresh
-            </button>
-          </div>
-        )}
-      </div>
-    )
+    return <ClockLoader />
   }
 
   return (

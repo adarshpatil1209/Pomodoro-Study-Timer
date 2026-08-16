@@ -147,7 +147,13 @@ export default function MainApp() {
   const { stats, loading: statsLoading, updateStats, addSession } = useStats()
   const [cameraOpen, setCameraOpen] = useState(false)
 
-  const isLoading = statsLoading
+  const [showSkeleton, setShowSkeleton] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setShowSkeleton(false), 3000)
+    return () => clearTimeout(t)
+  }, [])
+
+  const isLoading = showSkeleton && statsLoading
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const [eodVisible, setEodVisible] = useState(false)
@@ -201,7 +207,8 @@ export default function MainApp() {
   const todosHook = useTodos({
     onComplete: handleTaskComplete,
   })
-  const { loading: todosLoading } = todosHook
+  const { loading: rawTodosLoading } = todosHook
+  const todosLoading = showSkeleton && rawTodosLoading
 
   // EndOfDay: auto-show after 9pm if not dismissed
   useEffect(() => {
@@ -344,8 +351,14 @@ export default function MainApp() {
         }}
       >
         <div className="app-header-left">
-          <span className="app-logo font-display">Dr.Suru</span>
-          <span className="app-logo-icon">🩺</span>
+          <span style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 700,
+            fontSize: 20,
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: '#F5EFE6',
+          }}>PomoXP</span>
         </div>
 
         <motion.div
@@ -354,10 +367,15 @@ export default function MainApp() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0 }}
         >
-          <h1 className="app-greeting font-display">
-            Hey{' '}
-            <EditableName name={displayName} onSave={handleNameSave} />
-            , time to grind!
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300,
+            fontStyle: 'italic',
+            fontSize: 20,
+            color: '#C8B89A',
+            margin: 0,
+          }}>
+            Hey <EditableName name={displayName} onSave={handleNameSave} />
           </h1>
 
           {/* Room mode: partner presence */}
